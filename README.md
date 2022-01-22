@@ -72,3 +72,27 @@ The more important AOP concepts are:
 
 ## XML based Spring AOP
 
+We need two maven dependencies for Spring AOP:
+```xml
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+        </dependency>
+```
+However, dependency `spring-aop` is already included as a transitive dependency of `spring-context`:
+```text
+com.example:SpringAOP:jar:0.0.1-SNAPSHOT
++- org.springframework:spring-context:jar:5.2.19.RELEASE:compile
+|  +- org.springframework:spring-aop:jar:5.2.19.RELEASE:compile
+|  +- org.springframework:spring-beans:jar:5.2.19.RELEASE:compile
+|  +- org.springframework:spring-core:jar:5.2.19.RELEASE:compile
+|  |  \- org.springframework:spring-jcl:jar:5.2.19.RELEASE:compile
+|  \- org.springframework:spring-expression:jar:5.2.19.RELEASE:compile
+\- org.springframework:spring-aspects:jar:5.2.19.RELEASE:compile
+   \- org.aspectj:aspectjweaver:jar:1.9.7:compile
+```

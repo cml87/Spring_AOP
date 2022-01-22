@@ -14,8 +14,6 @@ public class PassengersManager {
         PassengerDao passengerDao = (PassengerDao) context.getBean("passengerDao");
         System.out.println(passengerDao.getPassenger(1));
 
-
-        System.out.println("hello!");
     }
 
 }
