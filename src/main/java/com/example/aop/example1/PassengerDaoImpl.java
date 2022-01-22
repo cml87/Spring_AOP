@@ -1,4 +1,4 @@
-package main.java.com.example.aop.example1;
+package com.example.aop.example1;
 
 import java.util.HashMap;
 import java.util.Map;
