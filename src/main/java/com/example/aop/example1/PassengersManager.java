@@ -8,12 +8,14 @@ public class PassengersManager {
 
     public static void main(String[] args) {
 
-
         ApplicationContext context = new ClassPathXmlApplicationContext("example1/aop.xml");
 
         PassengerDao passengerDao = (PassengerDao) context.getBean("passengerDao");
+
         System.out.println(passengerDao.getPassenger(1));
 
+        ClassA classA = (ClassA) context.getBean("classA");
+        classA.printHello();
     }
 
 }

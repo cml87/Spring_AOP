@@ -9,7 +9,7 @@ The course will cover:
 - Implementing crosscutting concerns for cashing and exceptions using Spring AOP
 - Using Spring AOP introductions
 
-Spring AOP is all about separating the real business problem from the cross-cutting functionalities. Cross-cutting functionalities are functionalities commonly needed in our code, regardless of the specific business logic being performed. Example of cross-cutting concerns are:
+Spring AOP complements the Spring IoC container, and is all about separating the real business problem from the cross-cutting functionalities. Cross-cutting functionalities are functionalities commonly needed in our code, regardless of the specific business logic being performed. They "cut across" multiple types and objects. Example of cross-cutting concerns are:
 1. logging: always present in our methods body
 2. exceptions handling: business methods will throw exceptions because of the operations they need to do. Eg. sql exceptions if they work with a db
 3. user rights check: some users of our app may not be authorized to call some methods
@@ -39,36 +39,60 @@ publica static Passenger getPassenger (int id){
     return passenger;
 }    
 ```
-With AOP we take all these cross-cutting logic and move it separate classes called "aspects". In general, an aspect does something before (eg. a log message) a method, the runs the method, then does something after the method (eg. another log). Logging is a classical example of an aspect, it is "logging aspect". It is an example of orthogonal or cross-cutting concern in Java applications.
+With AOP we take all these cross-cutting logic (or _concerns_) and move it separate classes called **aspects**, encapsulating them. The aspect will be the unit of modularity in AOP. In general, an aspect does something before (eg. a log message) a method, the runs the method, then does something after the method (eg. another log). Logging is a classical example of an aspect, it is "logging aspect". It is an example of orthogonal or cross-cutting concern in Java applications.
 
 Spring implements AOP in two ways:
 1. Schema based approach, which uses regular classes
-2. AspectJ approach, which uses regular classes annotated with the aspect annotations
+2. `AspectJ` annotation style, which uses regular classes annotated with the aspect annotations
+
+Spring AOP is implemented by using runtime proxies.
+
 
 ## Key AOP terms
+
+The central AOP concepts and terminology not Spring-specific. They are:
+- **Aspect**: A modularization of a concern that cuts across multiple classes. Transaction management and logging are examples. In Spring AOP, aspects are implemented by using regular classes (the schema-based approach) or regular classes annotated with the `@Aspect` annotation (the `@AspectJ` style).
+- **Join point**: A point during the execution of a program, such as the execution of a method or the handling of an exception. In Spring AOP, a join point always represents a <u>method execution</u>.
+- **Advice**: Action taken by an aspect at a particular join point. Different types of advice include "around", "before" and "after" advice. Many AOP frameworks, including Spring, model an advice as an <u>interceptor</u> and maintain a chain of interceptors around the join point.
+
+  It seems that when we apply an advice to a method execution of a class (join point), that class, or type, is called an "advised object". 
+
+- **Pointcut**: A predicate that matches join points. A _join point matcher_, I like to call it. Advice is associated with a pointcut expression and runs at any <u>join point matched by the pointcut</u> (for example, the execution of a method with a certain name).
+
+ The concept of join points as matched by pointcut expressions is central to AOP. Spring uses the `AspectJ` <u>pointcut expression language by default</u>. We'll see examples later. Pointcuts enable advices to be applied independently of the object-oriented hierarchy. For example, you can apply an around advice providing declarative transaction management to a set of methods that span multiple objects (such as all business operations in the service layer).
+
+- **Introduction**: Declaring additional methods or fields on behalf of a type. Spring AOP lets you introduce new interfaces (and a corresponding implementation) to any advised object. For example, you could use an introduction to make a bean implement an IsModified interface, to simplify caching. (An introduction is known as an inter-type declaration in the AspectJ community.)
+
+- **Target object**: An object being advised by one or more aspects. Also referred to as the "advised object". Since Spring AOP is implemented by using runtime proxies, this object is always a proxied object.
+
+- **AOP proxy**: An object created by the AOP framework in order to implement the aspect contracts (advise method executions and so on) so that it can add the aspects in the execution. Spring AOP provides two ways to create the AOP proxy:
+  1. JDK dynamic proxy, which is the standard mechanism of proxy creation.
+  2. Code Generation Library (CGLIB) proxy.
+- **Weaving**: linking aspects with other application types or objects, to _create_ an advised object. This can be done at compile time (using the AspectJ compiler, for example), load time, or at runtime. Spring AOP, like other pure Java AOP frameworks, performs <u>weaving at runtime</u>.
+
+![image info](./pictures/weaver.jpg)
+
+Spring AOP includes the following types of advice:
+- Before advice: Advice that runs before a join point but that does not have the ability to prevent execution flow proceeding to the join point (unless it throws an exception).
+- After returning advice: Advice to be run after a join point completes normally (for example, if a method returns without throwing an exception).
+- After throwing advice: Advice to be run if a method exits by throwing an exception.
+- After (finally) advice: Advice to be run regardless of the means by which a join point exits (normal or exceptional return).
+
+- Around advice: Advice that surrounds a join point such as a method invocation. This is the most powerful kind of advice. Around advice can perform custom behavior before and after the method invocation. It is also responsible for choosing whether to proceed to the join point or to shortcut the advised method execution by returning its own return value or throwing an exception.
+
+Around advice is the most general kind of advice. Since Spring AOP, like AspectJ, provides a full range of advice types, it is recommended to use the least powerful advice type that can implement the required behavior. For example, if you need only to update a cache with the return value of a method, you are better off implementing an after returning advice than an around advice, although an around advice can accomplish the same thing. Using the most specific advice type provides a simpler programming model with less potential for errors. For example, you do not need to invoke the proceed() method on the JoinPoint used for around advice, and, hence, you cannot fail to invoke it.
+
+All advice parameters are statically typed so that you work with advice parameters of the appropriate type (e.g. the type of the return value from a method execution) rather than Object arrays. ?
 
 What we do before the main function is called a `@Before` advice, and that made after, an `@After` advice.
 ```java
 public static Passenger getPassenger(int id) {
-    log.debug("Call method getPassenger with id " + id);  // @Before advice
-    Passenger passenger = Database.getPassenger(id);
-    log.debug("Passenger info: " + passenger.toString()); // @After advice
-    return passenger;
-}
+        log.debug("Call method getPassenger with id " + id);  // @Before advice
+        Passenger passenger = Database.getPassenger(id);
+        log.debug("Passenger info: " + passenger.toString()); // @After advice
+        return passenger;
+        }
 ```
-The more important AOP concepts are:
-- Join point: effective execution of a method, where the aspect will be applied.
-- Advice: the action taken by an aspect at a particular join point. There are different types, such as @Before, @After, @Around, @AfterReturning, @AfterThrowing. Spring AOP may create chain of advices for one single join point. 
-- Pointcut: a predicate that matches join points. An advice is associated with a pointcut expression and runs at any join point matching that point cut, for example, the execution of a method with a certain name.
-  
-- Target object: the object being advised by one or more aspects. Spring AOP will create a runtime proxy for the target object in order to add the aspect to the execution.
-- Introduction: used to declare additional methods, or fields, for a given class. Spring AOP makes possible the advised object to receive new interfaces to implement. We can have a given class that receive additional behaviour at runtime with the help of Introductions.
-- AOP Proxy: the object created by the AOP framework so that it can add the aspects in the execution. Spring AOP provides two ways to create the AOP proxy: 
-  1. JDK dynamic proxy, which is the standard mechanism of proxy creation. 
-  2. Code Generation Library (CGLIB) proxy.
-- Weaving: operation of program transformation that applies the aspect to the target object in order to create the advice object. Spring AOP performs weaving at runtime.
-
-![image info](./pictures/weaver.jpg)
 
 ## XML based Spring AOP
 
@@ -96,3 +120,121 @@ com.example:SpringAOP:jar:0.0.1-SNAPSHOT
 \- org.springframework:spring-aspects:jar:5.2.19.RELEASE:compile
    \- org.aspectj:aspectjweaver:jar:1.9.7:compile
 ```
+
+If we use xml configuration we'll need to include the AOP namespace and xml schema definition (xsd), where we can find the definition of the aop namespace ?
+
+With xml configuration we need to define the class that will be an aspect as a bean. In the example below it is `Bluesky`.
+Notice that Spring AOP will be able to add aspects only into Spring managed beans. The `sleep()` statements below are only needed to see things printed in order in the console. Also, I will use stupid names just to illustrate that the aspect class and advice methods can have any name, still notice how the reference names in the schema definition, file `aop.xml`, must match. For the same purpose, I will print simple messages in the advice methods, instead of logging something.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+  <bean id="passengerDao" class="com.example.aop.example1.PassengerDaoImpl"/>
+  <bean id="classA" class="com.example.aop.example1.ClassA"/>
+
+  <bean id="bluesky" class="com.example.aop.example1.Bluesky"/>
+
+  <aop:config>
+    <aop:aspect id="bluesky" ref="bluesky"> <!--the aspect class-->
+      <!--The point cut (join point matcher) with the AspectJ expression language to match a method name-->      
+      <aop:pointcut id="terra" expression="execution(* com.example.aop.example1.*.*(..))"/> 
+      
+      <!--the advice methods of the aspect class, and to be applied in
+      the point cut above-->
+      <aop:before pointcut-ref="terra" method="pipi"/> 
+      <aop:after pointcut-ref="terra" method="popo"/>
+    </aop:aspect>
+  </aop:config>
+
+</beans>
+```
+```java
+// This is the aspect class
+//public class LoggingAspect {
+public class Bluesky {
+
+  private Logger logger = Logger.getLogger(Bluesky.class.getName());
+
+  //public void before() {
+  public void pipi() {
+    System.out.println("---- Entering method");
+    //logger.info("Entering method");
+  }
+
+  //public void after() {
+  public void popo(){
+    System.out.println("---- Exiting method");
+    //logger.info("Exiting method");
+  }
+
+}
+```
+```java
+public interface PassengerDao {    Passenger getPassenger(int id);    }
+```
+```java
+
+public class PassengerDaoImpl implements PassengerDao {
+
+    private static Map<Integer, Passenger> passengersMap = new HashMap<>();
+    public Passenger getPassenger(int id) {
+
+        try {  Thread.sleep(100);  } catch (InterruptedException e) {  e.printStackTrace();  }
+
+        System.out.println("inside PassengerDaoImp.getPassenger()");
+        if (null != passengersMap.get(id)) {
+            return passengersMap.get(id);
+        }
+
+        Passenger passenger = new Passenger(id);
+        passengersMap.put(id, passenger);
+
+        System.out.println("quiting PassengerDapImpl.getPassenger()");
+
+        try {  Thread.sleep(100);  } catch (InterruptedException e) {  e.printStackTrace();  }
+        return passenger;
+    }
+}
+```
+```java
+public class ClassA {
+    public void printHello(){
+        try {  Thread.sleep(1000); }
+        catch (InterruptedException e) {  e.printStackTrace();  }
+        System.out.println("Hello !");
+    }
+}
+```
+```java
+public class PassengersManager {
+
+  public static void main(String[] args) {
+
+    ApplicationContext context = new ClassPathXmlApplicationContext("example1/aop.xml");
+
+    PassengerDao passengerDao = (PassengerDao) context.getBean("passengerDao");
+
+    System.out.println(passengerDao.getPassenger(1));
+
+    ClassA classA = (ClassA) context.getBean("classA");
+    classA.printHello();
+  }
+}
+```
+This prints
+```text
+---- Entering method
+inside PassengerDaoImp.getPassenger()
+quiting PassengerDapImpl.getPassenger()
+---- Exiting method
+Passenger: 1
+---- Entering method
+Hello !
+---- Exiting method
+```
+
+
