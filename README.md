@@ -340,3 +340,16 @@ class PassengerDaoProxy implements PassengerDao {
 ```
 Yet, I don't understand how the `ProceedingJoinPoint joinPoint` will carry information of the original class being proxied, such as the method being invoked and its arguments. This is retrieved in `LoggingAspect.log()` !!??
 
+As mentioned, there Spring uses two strategies to create the proxy objects
+1. JDK dynamic proxy standard mechanism: used if the class  that needs to be proxied implements an interface. The new proxy class will implement the same interface, and it will be returned when we ask the context for a bean of the proxied class. Notice that the new proxy class cannot be cast to the proxied class, as they are implementing the same interfaces but are two separate classes. The following would give an error:
+```java
+//the bean named 'passengerDao' is the proxied class, so we'll get the proxy class from the context instead        
+PassengerDao passengerDao = (PassengerDaoImpl) context.getBean("passengerDao");
+```
+
+2. CGLIB proxy mechanisms: used when the target class does not implement any interface. In this case, the proxy class will extend the target class itself, being able to substitute it this way.
+
+![image info](./pictures/proxy_mechanisms.jpg)
+
+
+
