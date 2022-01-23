@@ -3,7 +3,7 @@ package com.example.aop.example3;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PassengerDaoImpl implements PassengerDao {
+public class PassengerDaoImpl {//implements PassengerDao {
 
     private static Map<Integer, Passenger> passengersMap = new HashMap<>();
 

@@ -346,8 +346,12 @@ As mentioned, there Spring uses two strategies to create the proxy objects
 //the bean named 'passengerDao' is the proxied class, so we'll get the proxy class from the context instead        
 PassengerDao passengerDao = (PassengerDaoImpl) context.getBean("passengerDao");
 ```
+2. CGLIB proxy mechanisms: used when the target class does not implement any interface. In this case, the proxy class will extend the target class itself, being able to substitute it this way. Again we, will get this new subclass (proxy class) from the context when we ask for such bean:
+```java
+PassengerDaoImpl passengerDao = (PassengerDaoImpl) context.getBean("passengerDao");
+```
+If our class does not implement an interface and is final, there will be no way for Spring to build a proxy for it and we'll not be able to use Spring AOP. Similarly, if our class is not final (and does not implement any interface either), but the method that needs to be advised is final, it will not be overwritten by the proxy CGLIB sublclass Spring builds in this case, making the proxy mechanisms, and thus AOP, to not work in this case either. 
 
-2. CGLIB proxy mechanisms: used when the target class does not implement any interface. In this case, the proxy class will extend the target class itself, being able to substitute it this way.
 
 ![image info](./pictures/proxy_mechanisms.jpg)
 
