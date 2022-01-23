@@ -301,3 +301,42 @@ public class LoggingAspect {
 ```
 I think `@Around` uses the After returning advice, ie. even if method throws an exception, what fallows after the call to `proceed()` will not be executed.
 
+## AOP mechanism
+How AOP works ? When we create an advice for a method of a class, say "ClassA", that implements an interface, Spring will implement AOP by means of a proxy class of ClassA implementing the same interface. Then, at runtime, when we call the adviced method of the proxied class, Spring will actually run the implementation in the new proxy class. This implementation will run the aspect class having all the advices we created and a call to the original method body as well. For the proxy class, Spring will use JDK dynamic proxies. 
+
+For example, in the example above the proxied class will be `PassengerDaoImpl`. The new proxy class will be something like the following, and this is what the Spring IoC container will give back, when we ask him for a `PassengerDao` bean.
+
+```java
+import com.example.aop.example2.LoggingAspect;
+import com.example.aop.example3.PassengerDao;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.Signature;
+import org.aspectj.lang.reflect.SourceLocation;
+import org.aspectj.runtime.internal.AroundClosure;
+
+class PassengerDaoProxy implements PassengerDao {
+
+  //the original object will be wired here, the delegate, I think
+  PassengerDao passengerDao;
+
+  public Passenger getPassenger(int id) {
+
+    // this is the logging aspect class WE defined above
+    Aspect logger = new LoggingAspect();
+
+    ProceedingJoinPoint joinPoint = new ProceedingJoinPoint() {
+                                            @Override
+                                            public Object proceed() throws Throwable {
+                                              return passengerDao.getPassenger(id);
+                                            }
+                                            @Override
+                                            public Signature getSignature() {
+                                              // something that returns the signature of the method;
+                                            }
+                                    };
+    return logger.log(joinPoint);
+  }
+}
+```
+Yet, I don't understand how the `ProceedingJoinPoint joinPoint` will carry information of the original class being proxied, such as the method being invoked and its arguments. This is retrieved in `LoggingAspect.log()` !!??
+
