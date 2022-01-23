@@ -73,12 +73,12 @@ The central AOP concepts and terminology not Spring-specific. They are:
 ![image info](./pictures/weaver.jpg)
 
 Spring AOP includes the following types of advice:
-- Before advice: Advice that runs before a join point but that does not have the ability to prevent execution flow proceeding to the join point (unless it throws an exception).
-- After returning advice: Advice to be run after a join point completes normally (for example, if a method returns without throwing an exception).
-- After throwing advice: Advice to be run if a method exits by throwing an exception.
-- After (finally) advice: Advice to be run regardless of the means by which a join point exits (normal or exceptional return).
+- **Before**: Advice that runs before a join point but that does not have the ability to prevent execution flow proceeding to the join point (unless it throws an exception).
+- **After returning**: Advice to be run after a join point completes normally (for example, if a method returns without throwing an exception).
+- **After throwing**: Advice to be run if a method exits by throwing an exception.
+- **After** (finally): Advice to be run _regardless_ of the means by which a join point exits (normal or exceptional return).
 
-- Around advice: Advice that surrounds a join point such as a method invocation. This is the most powerful kind of advice. Around advice can perform custom behavior before and after the method invocation. It is also responsible for choosing whether to proceed to the join point or to shortcut the advised method execution by returning its own return value or throwing an exception.
+- **Around**: Advice that surrounds a join point such as a method invocation. This is the most powerful kind of advice. Around advice can perform custom behavior before and after the method invocation. It is also responsible for choosing whether to proceed to the join point or to shortcut the advised method execution by returning its own return value or throwing an exception.
 
 Around advice is the most general kind of advice. Since Spring AOP, like AspectJ, provides a full range of advice types, it is recommended to use the least powerful advice type that can implement the required behavior. For example, if you need only to update a cache with the return value of a method, you are better off implementing an after returning advice than an around advice, although an around advice can accomplish the same thing. Using the most specific advice type provides a simpler programming model with less potential for errors. For example, you do not need to invoke the proceed() method on the JoinPoint used for around advice, and, hence, you cannot fail to invoke it.
 
@@ -279,3 +279,25 @@ public class LoggingAspect {
 }
 ```
 In this case we pass to the AspectJ annotation AspectJ expression language strings, specifying the point cut where the advice method will be applied.
+
+## The `@Around` annotation
+The `@Around` annotation of AspectJ can wrap a join point completely, allowing to execute any actions before and after the advised method. It will get a reference to the beginning of the method block, `ProceedingJoinPoint`, with which we can decide whether to execute it or not. In the example below we print log messages before and after executing the method body with `Object result = thisJoinPoint.proceed();`.
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("execution(* *.*Passenger(..))")
+    public Object log (ProceedingJoinPoint thisJoinPoint) throws Throwable {
+        String methodName = thisJoinPoint.getSignature().getName();
+        Object[] methodArgs = thisJoinPoint.getArgs();
+        logger.info("Call method " + methodName + "with args " + methodArgs[0]);
+        Object result = thisJoinPoint.proceed();
+        logger.info("Method " + methodName+" returns " + result);
+        return result;
+    }
+}
+```
+I think `@Around` uses the After returning advice, ie. even if method throws an exception, what fallows after the call to `proceed()` will not be executed.
+
