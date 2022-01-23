@@ -237,4 +237,45 @@ Hello !
 ---- Exiting method
 ```
 
+## AspectJ based SpringAOP
+The aspect configuration in the schema definition above, file `aop.xml`, can be done directly in the aspect class, with the help of `AspectJ` annotations. We would only need to define the aspect bean and enable AspectJ with `<aop:aspectj-autoproxy/>`, in the schema definition:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
 
+<!--    to enable AspectJ support-->
+    <aop:aspectj-autoproxy/>
+
+    <bean id="passengerDao" class="com.example.aop.example2.PassengerDaoImpl"/>
+    <bean id="loggingAspect" class="com.example.aop.example2.LoggingAspect"/>
+
+</beans>
+```
+```java
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+
+import java.util.logging.Logger;
+
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Before("execution(* *.*Passenger(..))")
+    public void before(){
+        logger.info("Entering method");
+    }
+
+    @After("execution(* *.*Passenger(..))")
+    public void after(){
+        logger.info("Exiting method");
+    }
+}
+```
+In this case we pass to the AspectJ annotation AspectJ expression language strings, specifying the point cut where the advice method will be applied.
