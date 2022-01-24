@@ -302,9 +302,9 @@ public class LoggingAspect {
 I think `@Around` uses the After returning advice, ie. even if method throws an exception, what fallows after the call to `proceed()` will not be executed.
 
 ## AOP mechanism
-How AOP works ? When we create an advice for a method of a class, say "ClassA", that implements an interface, Spring will implement AOP by means of a proxy class of ClassA implementing the same interface. Then, at runtime, when we call the adviced method of the proxied class, Spring will actually run the implementation in the new proxy class. This implementation will run the aspect class having all the advices we created and a call to the original method body as well. For the proxy class, Spring will use JDK dynamic proxies. 
+How AOP works ? When we create an advice for a method of a class, say "ClassA", that implements an interface, Spring will implement AOP by means of a proxy class of ClassA implementing the same interface. Then, at runtime, when we call the adviced method of the proxied class, Spring will actually run the implementation in the new proxy class. This implementation will run the aspect class having all the advices we created and a call to the original method body as well. For the proxy class, Spring will use JDK dynamic proxies if the target class implements an interface. 
 
-For example, in the example above the proxied class will be `PassengerDaoImpl`. The new proxy class will be something like the following, and this is what the Spring IoC container will give back, when we ask him for a `PassengerDao` bean.
+For example, in the example above the proxied class is `PassengerDaoImpl`. The new proxy class is something like the following, and this is what the Spring IoC container will give back, when we ask him for a `PassengerDao` bean.
 
 ```java
 import com.example.aop.example2.LoggingAspect;
@@ -338,9 +338,12 @@ class PassengerDaoProxy implements PassengerDao {
   }
 }
 ```
-Yet, I don't understand how the `ProceedingJoinPoint joinPoint` will carry information of the original class being proxied, such as the method being invoked and its arguments. This is retrieved in `LoggingAspect.log()` !!??
+In the proxy class, there will be a field of interface typo pointing to an anonymous class, the `ProceedingJoinPoint joinPoint`. This class will define the methods not only to proceed with the execution of the method advised method in the target class, `proceed()`, but also to get the name and arguments of the latter, `getSignature()` and `getArgs()`. This information is needed in the aspect class's advice method, annotated with, `@Around`, as in this figure:
 
-As mentioned, there Spring uses two strategies to create the proxy objects
+![image info](./pictures/proxy_class.jpg)
+
+
+As mentioned, Spring uses two strategies to create the proxy objects
 1. JDK dynamic proxy standard mechanism: used if the class  that needs to be proxied implements an interface. The new proxy class will implement the same interface, and it will be returned when we ask the context for a bean of the proxied class. Notice that the new proxy class cannot be cast to the proxied class, as they are implementing the same interfaces but are two separate classes. The following would give an error:
 ```java
 //the bean named 'passengerDao' is the proxied class, so we'll get the proxy class from the context instead        
@@ -350,10 +353,10 @@ PassengerDao passengerDao = (PassengerDaoImpl) context.getBean("passengerDao");
 ```java
 PassengerDaoImpl passengerDao = (PassengerDaoImpl) context.getBean("passengerDao");
 ```
-If our class does not implement an interface and is final, there will be no way for Spring to build a proxy for it and we'll not be able to use Spring AOP. Similarly, if our class is not final (and does not implement any interface either), but the method that needs to be advised is final, it will not be overwritten by the proxy CGLIB sublclass Spring builds in this case, making the proxy mechanisms, and thus AOP, to not work in this case either. 
-
+If our class does not implement an interface and is final, there will be no way for Spring to build a proxy for it and we'll not be able to use Spring AOP. Similarly, if our class is not final (and does not implement any interface either), but the method that needs to be advised is final, it will not be overwritten by the proxy CGLIB sublclass Spring builds in this case, making the proxy mechanisms, and thus AOP, not to work in this case either. 
 
 ![image info](./pictures/proxy_mechanisms.jpg)
+
 
 
 
