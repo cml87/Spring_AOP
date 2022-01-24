@@ -288,6 +288,7 @@ public class LoggingAspect {
 
     private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
 
+    // this is AspectJ expression language for the point cut
     @Around("execution(* *.*Passenger(..))")
     public Object log (ProceedingJoinPoint thisJoinPoint) throws Throwable {
         String methodName = thisJoinPoint.getSignature().getName();
@@ -356,6 +357,42 @@ PassengerDaoImpl passengerDao = (PassengerDaoImpl) context.getBean("passengerDao
 If our class does not implement an interface and is final, there will be no way for Spring to build a proxy for it and we'll not be able to use Spring AOP. Similarly, if our class is not final (and does not implement any interface either), but the method that needs to be advised is final, it will not be overwritten by the proxy CGLIB sublclass Spring builds in this case, making the proxy mechanisms, and thus AOP, not to work in this case either. 
 
 ![image info](./pictures/proxy_mechanisms.jpg)
+
+## Orthogonal behaviour for normal execution and for exceptions
+The point cut we use in the around annotation can be a custom annotation as well, such that the matched join points will be any method annotated with such annotation. This avoid sticking to some naming convention in our methods, when we want to advice them. Now we only need to annotate them with our new maker annotation.
+```java
+public @interface Log {
+}
+```
+```java
+@Aspect
+public class LoggingAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @Around("@annotation(com.example.aop.example4.Log)")
+    public Object log (ProceedingJoinPoint thisJoinPoint) throws Throwable {
+        String methodName = thisJoinPoint.getSignature().getName();
+        Object[] methodArgs = thisJoinPoint.getArgs();
+        logger.info("Call method " + methodName + "with args " + methodArgs[0]);
+        Object result = thisJoinPoint.proceed();
+        logger.info("Method " + methodName+" returns " + result);
+        return result;
+    }
+}
+```
+```java
+public class PassengerDaoImpl implements PassengerDao {
+
+    private static Map<Integer, Passenger> passengersMap = new HashMap<>();
+
+    @Log
+    public Passenger getPassenger(int id) {
+        // ...
+    }
+
+}
+```
 
 
 
