@@ -358,8 +358,8 @@ If our class does not implement an interface and is final, there will be no way 
 
 ![image info](./pictures/proxy_mechanisms.jpg)
 
-## Orthogonal behaviour for normal execution and for exceptions
-The point cut we use in the around annotation can be a custom annotation as well, such that the matched join points will be any method annotated with such annotation. This avoid sticking to some naming convention in our methods, when we want to advice them. Now we only need to annotate them with our new maker annotation.
+## Orthogonal behaviour for normal execution with custom annotation
+The point cut definition we use in the around annotation can be a custom annotation as well, such that the matched join points will be any method annotated with such annotation. This avoids sticking to some naming convention and signature in the methods we want to advice, as we did in the example above. Now we only need to annotate them with our new maker annotation. Only to methods such annotated will be applied the AOP mechanisms.
 ```java
 public @interface Log {
 }
@@ -394,6 +394,93 @@ public class PassengerDaoImpl implements PassengerDao {
 }
 ```
 
+## Orthogonal behaviour for exception
+In the aspect class we can use another annotation with a point cut that will match the throwing of an exception by any method, `@AfterThrowing()`. As before, both, the aspect class and the class from whom we went to cat a potential exception with the advice method, need to be Spring beans. In the example below, we'll simply annotate these classes to make them beans, while leaving in the xml schema definition the component scan and the autoproxy definition only:
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
 
+    <!--    to enable AspectJ support-->
+    <aop:aspectj-autoproxy/>
 
+    <context:component-scan base-package="com.example.aop.example5"/>
 
+</beans>
+```
+```java
+@Service("passengerDao")
+public class PassengerDaoImpl implements PassengerDao {
+
+    private static Map<Integer, Passenger> passengersMap = new HashMap<>();
+
+    public Passenger getPassenger(int id) {
+
+        try {  Thread.sleep(100);  } 
+        catch (InterruptedException e) {  e.printStackTrace(); }
+
+        System.out.println("inside PassengerDaoImp.getPassenger()");
+
+        if (null != passengersMap.get(id)) {  return passengersMap.get(id); }
+
+        // throw an exception here for id < 1
+        if (id < 1)
+            throw new RuntimeException("incorrect id");
+
+        Passenger passenger = new Passenger(id);
+        passengersMap.put(id, passenger);
+        System.out.println("quiting PassengerDapImpl.getPassenger()");
+
+        try {  Thread.sleep(100);  } 
+        catch (InterruptedException e) {  e.printStackTrace();  }
+
+        return passenger;
+    }
+}
+```
+```java
+@Aspect
+@Service
+public class ExceptionAspect {
+
+    private Logger logger = Logger.getLogger(LoggingAspect.class.getName());
+
+    @AfterThrowing(pointcut = "execution(* *(..))", throwing = "exception")
+    public void processException(RuntimeException exception) throws Throwable{
+        logger.severe(exception.getMessage());
+    }
+}
+```
+```java
+public class PassengersManager {
+    public static void main(String[] args) {
+        ApplicationContext context = new ClassPathXmlApplicationContext("example5/aop.xml");
+        PassengerDao passengerDao = (PassengerDao) context.getBean("passengerDao");
+        Passenger passenger = passengerDao.getPassenger(0); // This will throw the exception since passed id is lower that 0
+        System.out.println(passenger);
+    }
+}
+```
+Notice that the exception argument name, in the signature of the advice method, must be equal to the 'throwing' parameter of the `@AfterThrowing` annotation. In other words, the throwing parameter in the `@AfterThrowing` annotation defines the name of the argument in the advice signature (signature of the `processException()` method above) to bind the thrown exception to.
+
+In the example above we log at "severe" level the message of the thrown exception. However, this is not catching an exception. The exception will be still propagated as soon as the body of the advice method finishes. This is what we will get printed:
+```text
+inside PassengerDaoImp.getPassenger()
+aaaa
+Jan 25, 2022 9:03:31 AM com.example.aop.example5.ExceptionAspect processException
+SEVERE: incorrect id
+bbbb
+Exception in thread "main" java.lang.RuntimeException: incorrect id
+	at com.example.aop.example5.PassengerDaoImpl.getPassenger(PassengerDaoImpl.java:29)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:564)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)
+	...
+```
