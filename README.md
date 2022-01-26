@@ -395,7 +395,7 @@ public class PassengerDaoImpl implements PassengerDao {
 ```
 
 ## Orthogonal behaviour for exception
-In the aspect class we can use another annotation with a point cut that will match the throwing of an exception by any method, `@AfterThrowing()`. As before, both, the aspect class and the class from whom we went to cat a potential exception with the advice method, need to be Spring beans. In the example below, we'll simply annotate these classes to make them beans, while leaving in the xml schema definition the component scan and the autoproxy definition only:
+In the aspect class we can use another annotation with a point cut that will match the throwing of an exception by any method, `@AfterThrowing()`. As before, both, the aspect class and the class from whom we went to intercept a potential exception thrown, with the advice method, need to be Spring beans. In the example below, we'll simply annotate these classes to make them beans, while leaving in the xml schema definition the component scan and the autoproxy definition only:
 ```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <beans xmlns="http://www.springframework.org/schema/beans"
