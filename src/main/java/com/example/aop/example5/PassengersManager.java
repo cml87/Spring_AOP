@@ -15,6 +15,9 @@ public class PassengersManager {
         Passenger passenger = passengerDao.getPassenger(0);
         System.out.println(passenger);
 
+
+
+
     }
 
 }
