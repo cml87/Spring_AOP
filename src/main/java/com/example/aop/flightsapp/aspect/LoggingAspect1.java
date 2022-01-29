@@ -1,5 +1,6 @@
 package com.example.aop.flightsapp.aspect;
 
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 
@@ -23,10 +24,15 @@ public class LoggingAspect1 {
         }
     }
 
-
     @Before("execution(public String com.example.aop.flightsapp.domain.Flight.getId())")
-    public void loggingAdviceGetId(){
-        logger.info("Flight.getId() will be called");
+    public void loggingAdviceGetIdIn(){
+        logger.info("in");
     }
+
+    @AfterReturning("execution(public String com.example.aop.flightsapp.domain.Flight.getId())")
+    public void loggingAdviceGetIdOut(){
+        logger.info("out");
+    }
+
 
 }
