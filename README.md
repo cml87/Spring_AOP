@@ -680,9 +680,13 @@ The first thing is to add the `spring-aspects` dependency to our pom. Then, if w
 </beans>
 ```
 
-
 Once our application is set up, we'll implement the following list of requirements with the help of Spring AOP:
 1. log a message every time `Flight.getId()` is called. It is sensitive information and we want to keep track every time it is accessed
-
+2. log a message after successfully executing _any_ `print()` method. Use WARNING log level as information is being printed and will be visible to any person.
+3. log a message for any Ticket method that is called.
 
 We'll use the advice annotations `@Before`, `@After` and `@AfterReturning`.
+
+When testing with by printing into the console, after the calls to the adviced methods, it is recommended to put a Thread.Sleep(), to give time the logs in the advice methods be generated and printed into the console.
+
+update FlightsManagement class above.

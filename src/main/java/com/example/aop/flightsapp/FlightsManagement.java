@@ -7,11 +7,12 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class FlightsManagement {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("flightsapp/aop.xml");
         Flight flight = (Flight) context.getBean("flight");
 
+        System.out.println("Calling Flight.print() ...");
         flight.print();
         System.out.println("");
 
@@ -25,7 +26,9 @@ public class FlightsManagement {
         System.out.println("List of passengers in the flight:");
         for (Passenger passenger: flight.getPassengers()){
             System.out.print(" " + passenger.getName() + ": ");
+            System.out.println(">> Calling Person.print() ...");
             passenger.print();
+            System.out.println();
         }
 
         Ticket ticket = (Ticket) context.getBean("ticket");
@@ -35,5 +38,4 @@ public class FlightsManagement {
         context.close();
 
     }
-
 }

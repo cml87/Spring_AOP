@@ -30,8 +30,16 @@ public class LoggingAspect1 {
     }
 
     @AfterReturning("execution(public String com.example.aop.flightsapp.domain.Flight.getId())")
-    public void loggingAdviceGetIdOut(){
+    public void loggingAdviceGetIdOut() throws InterruptedException {
         logger.info("out");
+        Thread.sleep(200);
+
+    }
+
+    @AfterReturning("execution(public * *.print())")
+    public void loggingAdvicePrint() throws InterruptedException {
+        logger.warning("A print method has been called");
+        Thread.sleep(200);
     }
 
 
