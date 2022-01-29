@@ -98,6 +98,7 @@ public static Passenger getPassenger(int id) {
 
 We need two maven dependencies for Spring AOP:
 ```xml
+        <!--already included as transitive dependency of spring-context-->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-aop</artifactId>
@@ -108,7 +109,7 @@ We need two maven dependencies for Spring AOP:
             <artifactId>spring-aspects</artifactId>
         </dependency>
 ```
-However, dependency `spring-aop` is already included as a transitive dependency of `spring-context`:
+However, dependency `spring-aop` is already included as a transitive dependency of `spring-context`, so we'll only need to add `spring-aspect` if we already have a Spring application set up:
 ```text
 com.example:SpringAOP:jar:0.0.1-SNAPSHOT
 +- org.springframework:spring-context:jar:5.2.19.RELEASE:compile
@@ -485,3 +486,173 @@ Exception in thread "main" java.lang.RuntimeException: incorrect id
 	...
 ```
 
+## Example application setup
+
+We'll illustrate how to use Spring AOP to implement cross-cutting concerns in a flight management application. We will have three model classes with its methods: the `Flight`, the `Passenger`s of the flight, and the `Ticket` of a passenger:
+```java
+public class Flight {
+
+    private String id;
+    private String company;
+    private List<Passenger> passengers;
+
+    public String getId() {  return id;  }
+    public void setId(String id) {  this.id = id;  }
+    public String getCompany() {  return company;  }
+    public void setCompany(String company) {  this.company = company;  }
+    public List<Passenger> getPassengers() { return passengers; }
+    public void setPassengers(List<Passenger> passengers) {  this.passengers = passengers;  }
+
+    // prints the list of passengers
+    public void print(){
+        System.out.printf("Flight [%s], company [%s]:\n",id, company);
+        for (Passenger passenger: passengers)
+            System.out.println(" " + passenger);
+    }
+}
+```
+```java
+public class Passenger {
+
+    private String name;
+    private String country;
+
+    public String getName() {  return name;  }
+    public void setName(String name) {  this.name = name;  }
+    public String getCountry() {  return country;  }
+    public void setCountry(String country) {  this.country = country;  }
+
+    public void print(){  System.out.println(this);  }
+
+    @Override
+    public String toString() {
+        return "Passenger{" + "name='" + name + '\'' +
+                ", country='" + country + '\'' + '}';
+    }
+}
+```
+```java
+package com.example.aop.flightsapp.domain;
+
+public class Ticket {
+
+    private String number;
+
+    // owner of the ticket
+    private Passenger passenger;
+    public String getNumber() {  return number;  }
+
+    public void setNumber(String number) {  this.number = number;  }
+
+    public Passenger getPassenger() {  return passenger;  }
+
+    public void setPassenger(Passenger passenger) {  this.passenger = passenger;  }
+
+    // returns the country of the passenger owner of the ticket
+    public String emittingCountry(){  return passenger.getCountry();  }
+
+    @Override
+    public String toString() {
+        return "Ticket{" + "number='" + number + '\'' + '}';
+    }
+}
+```
+```java
+package com.example.aop.flightsapp;
+
+import com.example.aop.flightsapp.domain.Flight;
+import com.example.aop.flightsapp.domain.Passenger;
+import com.example.aop.flightsapp.domain.Ticket;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class FlightsManagement {
+
+
+    public static void main(String[] args) {
+
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("flightsapp/aop.xml");
+        Flight flight = (Flight) context.getBean("flight");
+
+        flight.print();
+        System.out.println("");
+
+        System.out.println("Flight id: "+flight.getId());
+        flight.setId("AA5678");
+
+        System.out.println("Flight company: "+flight.getCompany());
+        System.out.println();
+
+        System.out.println("List of passengers in the flight:");
+        for (Passenger passenger: flight.getPassengers()){
+            System.out.print(" " + passenger.getName() + ": ");
+            passenger.print();
+        }
+
+        Ticket ticket = (Ticket) context.getBean("ticket");
+        ticket.setNumber("0987654321");
+   
+        // do we need to close the context explicitly??
+        context.close();
+    }
+}
+
+```
+The initial pom to set up our context will be:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jim"/>
+        <property name="country" value="US" />
+    </bean>
+
+    <bean id="jack" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jack"/>
+        <property name="country" value="UK" />
+    </bean>
+
+    <bean id="jill" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jill"/>
+        <property name="country" value="AU" />
+    </bean>
+
+    <bean id="flight" class= "com.example.aop.flightsapp.domain.Flight">
+        <property name="id" value="AA1234"/>
+        <property name="company" value="ABC Flights"/>
+        <property name="passengers">
+            <list>
+                <ref bean="jim"/>
+                <ref bean="jack"/>
+                <ref bean="jill"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="ticket" class= "com.example.aop.flightsapp.domain.Ticket">
+        <property name="passenger" ref="jim"/>
+        <property name="number" value="1234567890"/>
+    </bean>
+
+</beans>
+```
+When run we'll get printed in the console:
+```text
+Flight [AA1234], company [ABC Flights]:
+ Passenger{name='Jim', country='US'}
+ Passenger{name='Jack', country='UK'}
+ Passenger{name='Jill', country='AU'}
+
+Flight id: AA1234
+Flight company: ABC Flights
+
+List of passengers in the flight:
+ Jim: Passenger{name='Jim', country='US'}
+ Jack: Passenger{name='Jack', country='UK'}
+ Jill: Passenger{name='Jill', country='AU'}
+```
+
+Once our application is set up, we'll implement the following list of requirements with the help of Spring AOP:
+1. log a message every time the get method is call

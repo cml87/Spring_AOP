@@ -38,5 +38,4 @@ public class Flight {
         for (Passenger passenger: passengers)
             System.out.println(" " + passenger);
     }
-
 }
