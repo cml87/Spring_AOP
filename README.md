@@ -52,12 +52,14 @@ Spring AOP is implemented by using runtime proxies.
 
 The central AOP concepts and terminology not Spring-specific. They are:
 - **Aspect**: A modularization of a concern that cuts across multiple classes. Transaction management and logging are examples. In Spring AOP, aspects are implemented by using regular classes (the schema-based approach) or regular classes annotated with the `@Aspect` annotation (the `@AspectJ` style).
-- **Join point**: A point during the execution of a program, such as the execution of a method or the handling of an exception. In Spring AOP, a join point always represents a <u>method execution</u>.
-- **Advice**: Action taken by an aspect at a particular join point. Different types of advice include "around", "before" and "after" advice. Many AOP frameworks, including Spring, model an advice as an <u>interceptor</u> and maintain a chain of interceptors around the join point.
+
+- **Join point**: A point during the execution of a program, such as the execution of a method or the handling of an exception. In Spring AOP, a join point always represents a <u>method execution</u>. Joint point will match certain patterns. These patters are called "point cuts".
+
+- **Advice**: Action taken by an aspect at a particular join point. Different types of advice include "around", "before" and "after" advice. Many AOP frameworks, including Spring, model advices as an <u>interceptor</u>, and maintain a chain of interceptors around the join point.
 
   It seems that when we apply an advice to a method execution of a class (join point), that class, or type, is called an "advised object". 
 
-- **Pointcut**: A predicate that matches join points. A _join point matcher_, I like to call it. Advice is associated with a pointcut expression and runs at any <u>join point matched by the pointcut</u> (for example, the execution of a method with a certain name).
+- **Pointcut**: A predicate that matches join points. A _join point matcher_, as I prefer to call it. Advice is associated with a pointcut expression and runs at any <u>join point matched by the pointcut</u> (for example, the execution of a method with a certain name).
 
  The concept of join points as matched by pointcut expressions is central to AOP. Spring uses the `AspectJ` <u>pointcut expression language by default</u>. We'll see examples later. Pointcuts enable advices to be applied independently of the object-oriented hierarchy. For example, you can apply an around advice providing declarative transaction management to a set of methods that span multiple objects (such as all business operations in the service layer).
 
@@ -576,6 +578,7 @@ public class FlightsManagement {
         flight.print();
         System.out.println("");
 
+        System.out.println("Calling Flight.getId() ...");
         System.out.println("Flight id: "+flight.getId());
         flight.setId("AA5678");
 
@@ -597,7 +600,7 @@ public class FlightsManagement {
 }
 
 ```
-The initial pom to set up our context will be:
+The initial context configuration to set up our will be in `flightsapp/aop.xml`:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -645,6 +648,7 @@ Flight [AA1234], company [ABC Flights]:
  Passenger{name='Jack', country='UK'}
  Passenger{name='Jill', country='AU'}
 
+Calling Flight.getId() ...
 Flight id: AA1234
 Flight company: ABC Flights
 
@@ -654,5 +658,31 @@ List of passengers in the flight:
  Jill: Passenger{name='Jill', country='AU'}
 ```
 
+## Adding Spring AOP to the example application
+The first thing is to add the `spring-aspects` dependency to our pom. Then, if we are using xml configuration as just shown, we need to add the aop name space and schema definition, enable AOP/AspectKJ ?, and define the aspect class we'll use as a bean, as usual.
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+    <!--    to enable AspectJ support-->
+    <aop:aspectj-autoproxy/>
+  
+    <!--  ...  -->
+  
+    <bean name="loggingAspect1" class="com.example.aop.flightsapp.aspect.LoggingAspect1"/>
+  
+</beans>
+```
+
+
 Once our application is set up, we'll implement the following list of requirements with the help of Spring AOP:
-1. log a message every time the get method is call
+1. log a message every time `Flight.getId()` is called. It is sensitive information and we want to keep track every time it is accessed
+
+
+We'll use the advice annotations `@Before`, `@After` and `@AfterReturning`.

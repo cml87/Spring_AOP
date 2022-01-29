@@ -7,7 +7,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class FlightsManagement {
 
-
     public static void main(String[] args) {
 
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("flightsapp/aop.xml");
@@ -16,6 +15,7 @@ public class FlightsManagement {
         flight.print();
         System.out.println("");
 
+        System.out.println("Calling Flight.getId() ...");
         System.out.println("Flight id: "+flight.getId());
         flight.setId("AA5678");
 
