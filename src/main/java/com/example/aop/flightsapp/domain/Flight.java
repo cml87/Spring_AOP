@@ -32,9 +32,11 @@ public class Flight {
         this.passengers = passengers;
     }
 
+    // prints the list of passengers
     public void print(){
+        System.out.printf("Flight [%s], company [%s]:\n",id, company);
         for (Passenger passenger: passengers)
-            System.out.println(passenger);
+            System.out.println(" " + passenger);
     }
 
 }

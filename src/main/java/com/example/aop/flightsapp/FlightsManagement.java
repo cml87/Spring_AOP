@@ -14,13 +14,17 @@ public class FlightsManagement {
         Flight flight = (Flight) context.getBean("flight");
 
         flight.print();
-        System.out.println(flight.getId());
+        System.out.println("");
+
+        System.out.println("Flight id: "+flight.getId());
         flight.setId("AA5678");
 
-        System.out.println(flight.getCompany());
+        System.out.println("Flight company: "+flight.getCompany());
+        System.out.println();
 
+        System.out.println("List of passengers in the flight:");
         for (Passenger passenger: flight.getPassengers()){
-            System.out.println(passenger.getName());
+            System.out.print(" " + passenger.getName() + ": ");
             passenger.print();
         }
 

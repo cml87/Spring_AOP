@@ -3,6 +3,8 @@ package com.example.aop.flightsapp.domain;
 public class Ticket {
 
     private String number;
+
+    // owner of the ticket
     private Passenger passenger;
 
     public String getNumber() {
@@ -21,6 +23,7 @@ public class Ticket {
         this.passenger = passenger;
     }
 
+    // returns the country of the passenger owner of the ticket
     public String emittingCountry(){
         return passenger.getCountry();
     }
@@ -29,7 +32,6 @@ public class Ticket {
     public String toString() {
         return "Ticket{" +
                 "number='" + number + '\'' +
-                ", passenger=" + passenger +
                 '}';
     }
 }
