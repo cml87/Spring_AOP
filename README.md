@@ -76,11 +76,13 @@ The central AOP concepts and terminology not Spring-specific. They are:
 
 Spring AOP includes the following types of advice:
 - **Before**: Advice that runs before a join point but that does not have the ability to prevent execution flow proceeding to the join point (unless it throws an exception).
-- **After returning**: Advice to be run after a join point completes normally (for example, if a method returns without throwing an exception).
+- **After returning**: Advice to be run after a join point completes _normally_ (for example, if a method returns without throwing an exception).
 - **After throwing**: Advice to be run if a method exits by throwing an exception.
 - **After** (finally): Advice to be run _regardless_ of the means by which a join point exits (normal or exceptional return).
 
 - **Around**: Advice that surrounds a join point such as a method invocation. This is the most powerful kind of advice. Around advice can perform custom behavior before and after the method invocation. It is also responsible for choosing whether to proceed to the join point or to shortcut the advised method execution by returning its own return value or throwing an exception.
+
+  If inside an Around annotated method we throw an exception, and we don't handle it, the programs interrupts there.
 
 Around advice is the most general kind of advice. Since Spring AOP, like AspectJ, provides a full range of advice types, it is recommended to use the least powerful advice type that can implement the required behavior. For example, if you need only to update a cache with the return value of a method, you are better off implementing an after returning advice than an around advice, although an around advice can accomplish the same thing. Using the most specific advice type provides a simpler programming model with less potential for errors. For example, you do not need to invoke the proceed() method on the JoinPoint used for around advice, and, hence, you cannot fail to invoke it.
 
@@ -753,6 +755,62 @@ For the implementations of the third requirement, notice how the pointcut was de
 
 ## Additional logging functionalities for our app
 There is one more requirement to be implemented: objects such as `Flight`, `Passenger` and `Ticket` should not change their internals too frequently. If this happens, we should log a message at the SEVERE level. To implement this requirement, we'll use the advice annotations `@Around` and `@Order`. Moreover, since will be matching join points already matched by previously defined point cuts, we'll need to decide which point cut should have higher priority, which is to say, which one should be executed first. To this purpose, we'll use the `@Order` annotation.
+
+The new requirement means that the execution of setter methods of classes `Flight`, `Passenger` and `Ticket` should be tracked. We previously defined a point cut that matches the execution of any method in class `Ticket`, including, setters. To decide which advice methods in different aspect classes will execute first, we'll annotate the new aspect class (introduced for the new requirement) with `@Ordwer(2)` and the old one with `@Order(1)`. This way the new aspect class will have higher priority and its advice method will be executed first, in case they match a join point also matched by other advice methods in other aspect classes. Here is the new aspect class with the new advice methods:
+```java
+@Aspect
+@Order(2)
+public class LoggingAspect2 {
+
+    private Logger logger = null;//Logger.getLogger(LoggingAspect1.class.getName());
+
+    // logger format set up
+    {
+        InputStream stream = LoggingAspect2.class.getClassLoader().getResourceAsStream("logging.properties");
+        try {
+            LogManager.getLogManager().readConfiguration(stream);
+            logger = Logger.getLogger(LoggingAspect2.class.getName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Around("allSetters()")
+    public Object log (ProceedingJoinPoint thisJoinPoint) throws Throwable{
+
+        String methodName = thisJoinPoint.getSignature().getName();
+        Object[] methodArgs = thisJoinPoint.getArgs();
+        logger.severe("> Call method " + methodName + " with args " + methodArgs[0]);
+        Object result = thisJoinPoint.proceed();
+        logger.severe("> Method " + methodName + " returns " + result);
+        return result;
+    }
+
+    @Pointcut("execution(* com.example.aop.flightsapp.domain.*.*set*(..))")
+    public void allSetters(){}
+
+}
+```
+Now, when calling the setter method of the `Ticket` class we get:
+```text
+Setting number of a ticket ...
+2022-01-30 16:42:03 [SEVERE] [com.example.aop.flightsapp.aspect.LoggingAspect2 log]:: > Call method setNumber with args 0987654321
+2022-01-30 16:42:03 [SEVERE] [com.example.aop.flightsapp.aspect.LoggingAspect2 log]:: > Method setNumber returns null
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: A ticket method has been called
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: join point: execution(void com.example.aop.flightsapp.domain.Ticket.setNumber(String))
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: signature: void com.example.aop.flightsapp.domain.Ticket.setNumber(String)
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: signature name: setNumber
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: signature short string: Ticket.setNumber(..)
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: signature long string: public void com.example.aop.flightsapp.domain.Ticket.setNumber(java.lang.String)
+2022-01-30 16:42:03 [INFO] [com.example.aop.flightsapp.aspect.LoggingAspect1 loggingAdvice]:: object after method exec: Ticket{number='0987654321'}
+```
+Notice how the matching advice methods in the aspect class with higher priority is executed first. 
+
+In the example above notice the use of the `@Around` annotation. This annotation completely replaces the execution body of and adviced method. Notice how we had to call the adviced method explicitly with `Object result = thisJoinPoint.proceed();`, otherwise we wouldn't have gotten it executed at all. In the example, we log something before and after executing the method, and then return what we got from the method call. 
+
+
+## Cross-cutting concerns for catching and exceptions
+
 
 
 

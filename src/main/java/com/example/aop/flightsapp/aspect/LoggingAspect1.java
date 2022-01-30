@@ -2,6 +2,7 @@ package com.example.aop.flightsapp.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
+import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 @Aspect
+@Order(1)
 public class LoggingAspect1 {
 
     private Logger logger = null;//Logger.getLogger(LoggingAspect1.class.getName());
