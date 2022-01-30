@@ -32,6 +32,7 @@ public class FlightsManagement {
         }
 
         Ticket ticket = (Ticket) context.getBean("ticket");
+        System.out.println("Setting number of a ticket ...");
         ticket.setNumber("0987654321");
 
         // do we need to close the context explicitly??

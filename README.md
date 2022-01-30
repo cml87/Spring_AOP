@@ -560,45 +560,41 @@ public class Ticket {
 }
 ```
 ```java
-package com.example.aop.flightsapp;
-
-import com.example.aop.flightsapp.domain.Flight;
-import com.example.aop.flightsapp.domain.Passenger;
-import com.example.aop.flightsapp.domain.Ticket;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 public class FlightsManagement {
 
+  public static void main(String[] args) throws InterruptedException {
 
-    public static void main(String[] args) {
+    ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("flightsapp/aop.xml");
+    Flight flight = (Flight) context.getBean("flight");
 
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("flightsapp/aop.xml");
-        Flight flight = (Flight) context.getBean("flight");
+    System.out.println("Calling Flight.print() ...");
+    flight.print();
+    System.out.println("");
 
-        flight.print();
-        System.out.println("");
+    System.out.println("Calling Flight.getId() ...");
+    System.out.println("Flight id: "+flight.getId());
+    flight.setId("AA5678");
 
-        System.out.println("Calling Flight.getId() ...");
-        System.out.println("Flight id: "+flight.getId());
-        flight.setId("AA5678");
+    System.out.println("Flight company: "+flight.getCompany());
+    System.out.println();
 
-        System.out.println("Flight company: "+flight.getCompany());
-        System.out.println();
-
-        System.out.println("List of passengers in the flight:");
-        for (Passenger passenger: flight.getPassengers()){
-            System.out.print(" " + passenger.getName() + ": ");
-            passenger.print();
-        }
-
-        Ticket ticket = (Ticket) context.getBean("ticket");
-        ticket.setNumber("0987654321");
-   
-        // do we need to close the context explicitly??
-        context.close();
+    System.out.println("List of passengers in the flight:");
+    for (Passenger passenger: flight.getPassengers()){
+      System.out.print(" " + passenger.getName() + ": ");
+      System.out.println(">> Calling Person.print() ...");
+      passenger.print();
+      System.out.println();
     }
-}
 
+    Ticket ticket = (Ticket) context.getBean("ticket");
+    System.out.println("Setting number of a ticket ...");
+    ticket.setNumber("0987654321");
+
+    // do we need to close the context explicitly??
+    context.close();
+
+  }
+}
 ```
 The initial context configuration to set up our will be in `flightsapp/aop.xml`:
 ```xml
@@ -643,6 +639,7 @@ The initial context configuration to set up our will be in `flightsapp/aop.xml`:
 ```
 When run we'll get printed in the console:
 ```text
+Calling Flight.print() ...
 Flight [AA1234], company [ABC Flights]:
  Passenger{name='Jim', country='US'}
  Passenger{name='Jack', country='UK'}
@@ -653,9 +650,16 @@ Flight id: AA1234
 Flight company: ABC Flights
 
 List of passengers in the flight:
- Jim: Passenger{name='Jim', country='US'}
- Jack: Passenger{name='Jack', country='UK'}
- Jill: Passenger{name='Jill', country='AU'}
+ Jim: >> Calling Person.print() ...
+Passenger{name='Jim', country='US'}
+
+ Jack: >> Calling Person.print() ...
+Passenger{name='Jack', country='UK'}
+
+ Jill: >> Calling Person.print() ...
+Passenger{name='Jill', country='AU'}
+
+Setting number of a ticket ...
 ```
 
 ## Adding Spring AOP to the example application
@@ -681,12 +685,76 @@ The first thing is to add the `spring-aspects` dependency to our pom. Then, if w
 ```
 
 Once our application is set up, we'll implement the following list of requirements with the help of Spring AOP:
-1. log a message every time `Flight.getId()` is called. It is sensitive information and we want to keep track every time it is accessed
+1. log a message every time `Flight.getId()` is called. It is sensitive information, and we want to keep track every time it is accessed
 2. log a message after successfully executing _any_ `print()` method. Use WARNING log level as information is being printed and will be visible to any person.
-3. log a message for any Ticket method that is called.
+3. log a message for any Ticket method that is called, also a sensitive information
 
 We'll use the advice annotations `@Before`, `@After` and `@AfterReturning`.
 
-When testing with by printing into the console, after the calls to the adviced methods, it is recommended to put a Thread.Sleep(), to give time the logs in the advice methods be generated and printed into the console.
+When testing with by printing into the console, it may be needed to sleep the thread running our program for some time, so the logs inside the advice methods get to be generated and printed into the console, before the console receive other printouts from successive commands in our program.
 
-update FlightsManagement class above.
+Here is how our aspect class would look like, when it implements these three requirements:
+
+```java
+@Aspect
+public class LoggingAspect1 {
+
+    private Logger logger = null;//Logger.getLogger(LoggingAspect1.class.getName());
+
+    // logger format set up
+    {
+        InputStream stream = LoggingAspect1.class.getClassLoader().getResourceAsStream("logging.properties");
+        try {
+            LogManager.getLogManager().readConfiguration(stream);
+            logger = Logger.getLogger(LoggingAspect1.class.getName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 1. log a message every time `Flight.getId()` is called.
+    @Before("execution(public String com.example.aop.flightsapp.domain.Flight.getId())")
+    public void loggingAdviceGetIdIn(){
+        logger.info("in");
+    }
+    @AfterReturning("execution(public String com.example.aop.flightsapp.domain.Flight.getId())")
+    public void loggingAdviceGetIdOut() throws InterruptedException {
+        logger.info("out");
+        Thread.sleep(200);
+
+    }
+
+    // 2. log a message after successfully executing _any_ `print()` method.
+    @AfterReturning("execution(public * *.print())")
+    public void loggingAdvicePrint() throws InterruptedException {
+        logger.warning("A print method has been called");
+        Thread.sleep(200);
+    }
+
+
+    // 3. log a message for any Ticket method that is called
+    @Pointcut("within(com.example.aop.flightsapp.domain.Ticket)")
+    public void allTicketsMethods(){}
+
+    @After("allTicketsMethods()")
+    public void loggingAdvice(JoinPoint joinPoint) throws InterruptedException {
+        logger.info("A ticket method has been called");
+        logger.info("join point: "+joinPoint.toString());
+        logger.info("signature: "+joinPoint.getSignature().toString());
+        logger.info("signature name: "+joinPoint.getSignature().getName());
+        logger.info("signature short string: "+joinPoint.getSignature().toShortString());
+        logger.info("signature long string: "+joinPoint.getSignature().toLongString());
+        logger.info("object after method exec: "+joinPoint.getTarget().toString());
+        Thread.sleep(200);
+    }
+}
+```
+For the implementations of the third requirement, notice how the pointcut was defined in a separate method annotated with `@Pointcut`. Also in this case, notice how we get access to the `JoinPoint` the pointcut of the advice method matches!  
+
+## Additional logging functionalities for our app
+There is one more requirement to be implemented: objects such as `Flight`, `Passenger` and `Ticket` should not change their internals too frequently. If this happens, we should log a message at the SEVERE level. To implement this requirement, we'll use the advice annotations `@Around` and `@Order`. Moreover, since will be matching join points already matched by previously defined point cuts, we'll need to decide which point cut should have higher priority, which is to say, which one should be executed first. To this purpose, we'll use the `@Order` annotation.
+
+
+
+
+
