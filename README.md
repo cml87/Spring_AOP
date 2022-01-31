@@ -810,8 +810,7 @@ In the example above notice the use of the `@Around` annotation. This annotation
 
 
 ## Cross-cutting concerns for catching and exceptions
-
-
+Now we'll create an aspect that manages caching on CRUD operations
 
 
 
