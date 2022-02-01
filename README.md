@@ -810,8 +810,89 @@ In the example above notice the use of the `@Around` annotation. This annotation
 
 
 ## Cross-cutting concerns for catching and exceptions
-Now we'll create an aspect that manages caching on CRUD operations
+Now we'll create an aspect that manages caching on CRUD operations. We'll use a H2 database. The pom dependencies and the context definition we'll need are the following:
+```xml
+        <dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.10</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.1.210</version>
+        </dependency>
+```
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd>
+                            http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.1.xsd">
+
+<!--    reference to tht jdbc name space and schema definition file-->
+
+    <!--    to enable AspectJ support-->
+    <aop:aspectj-autoproxy/>
+
+    <!--    embedded database definition and initialization-->
+    <jdbc:embedded-database id="dataSource"/>
+    <jdbc:initialize-database data-source="dataSource">
+        <jdbc:script location="classpath:db-schema.sql"/>
+    </jdbc:initialize-database>
+
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+        <property name="url" value="jdbc:h2:~/flightsmanagement"/>
+        <property name="username" value="sa"/>
+        <property name="password" value=""/>
+    </bean>
+
+    <!-- Business logic beans -->
+    <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jim"/>
+        <property name="country" value="US" />
+    </bean>
+
+    <bean id="jack" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jack"/>
+        <property name="country" value="UK" />
+    </bean>
+
+    <bean id="jill" class ="com.example.aop.flightsapp.domain.Passenger">
+        <property name="name" value="Jill"/>
+        <property name="country" value="AU" />
+    </bean>
+
+    <bean id="flight" class= "com.example.aop.flightsapp.domain.Flight">
+        <property name="id" value="AA1234"/>
+        <property name="company" value="ABC Flights"/>
+        <property name="passengers">
+            <list>
+                <ref bean="jim"/>
+                <ref bean="jack"/>
+                <ref bean="jill"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="ticket" class= "com.example.aop.flightsapp.domain.Ticket">
+        <property name="passenger" ref="jim"/>
+        <property name="number" value="1234567890"/>
+    </bean>
+
+    <!-- AspectJ beans-->
+    <bean name="loggingAspect1" class="com.example.aop.flightsapp.aspect.LoggingAspect1"/>
+    <bean name="loggingAspect2" class="com.example.aop.flightsapp.aspect.LoggingAspect2"/>
+
+</beans>
+```
 
 
 

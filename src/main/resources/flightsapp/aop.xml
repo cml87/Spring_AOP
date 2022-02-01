@@ -9,14 +9,24 @@
                             http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd>
                             http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.1.xsd">
 
-<!--    reference to tht jdbc name sapce and schema definition file-->
+<!--    reference to tht jdbc name space and schema definition file-->
 
     <!--    to enable AspectJ support-->
     <aop:aspectj-autoproxy/>
 
-    <!--    embeded database-->
+    <!--    embedded database initialization-->
     <jdbc:embedded-database id="dataSource"/>
+    <jdbc:initialize-database data-source="dataSource">
+        <jdbc:script location="classpath:db-schema.sql"/>
+    </jdbc:initialize-database>
 
+    <!-- data source bean definition -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+        <property name="url" value="jdbc:h2:~/flightsmanagement"/>
+        <property name="username" value="sa"/>
+        <property name="password" value=""/>
+    </bean>
 
 
     <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
