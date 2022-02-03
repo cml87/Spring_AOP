@@ -893,6 +893,6 @@ Now we'll create an aspect that manages caching on CRUD operations. We'll use a 
 
 </beans>
 ```
-
+We'll access the db by implementing the DAO design pattern. This pattern provides an abstract interface to a database, by exposing specific data operations without exposing the specificities of the used database. It maps the application calls to the persistence layer.
 
 
