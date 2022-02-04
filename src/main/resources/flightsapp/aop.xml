@@ -28,6 +28,9 @@
         <property name="password" value=""/>
     </bean>
 
+    <bean id="passengerDaoImpl" class="com.example.aop.flightsapp.dao.PassengerDaoImpl">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
 
     <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
         <property name="name" value="Jim"/>
