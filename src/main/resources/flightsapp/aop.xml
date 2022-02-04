@@ -6,7 +6,7 @@
        xmlns:jdbc="http://www.springframework.org/schema/jdbc"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd>
+                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
                             http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.1.xsd">
 
 <!--    reference to tht jdbc name space and schema definition file-->
@@ -17,7 +17,7 @@
     <!--    embedded database initialization-->
     <jdbc:embedded-database id="dataSource"/>
     <jdbc:initialize-database data-source="dataSource">
-        <jdbc:script location="classpath:db-schema.sql"/>
+        <jdbc:script location="classpath:flightsapp/db-schema.sql"/>
     </jdbc:initialize-database>
 
     <!-- data source bean definition -->
