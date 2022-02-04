@@ -32,6 +32,8 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
+<!--    try injecting in passengerDaoImpl only the JdbcTemplate-->
+
     <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
         <property name="name" value="Jim"/>
         <property name="country" value="US" />

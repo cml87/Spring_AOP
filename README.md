@@ -809,7 +809,7 @@ Notice how the matching advice methods in the aspect class with higher priority 
 In the example above notice the use of the `@Around` annotation. This annotation completely replaces the execution body of and adviced method. Notice how we had to call the adviced method explicitly with `Object result = thisJoinPoint.proceed();`, otherwise we wouldn't have gotten it executed at all. In the example, we log something before and after executing the method, and then return what we got from the method call. 
 
 
-## Cross-cutting concerns for catching and exceptions
+## Cross-cutting concerns for catching and exceptions. CRUD operations
 Now we'll create an aspect that manages caching on CRUD operations. We'll use a H2 database. The pom dependencies and the context definition we'll need are the following:
 ```xml
         <dependency>
@@ -836,63 +836,118 @@ Now we'll create an aspect that manages caching on CRUD operations. We'll use a 
                             http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd>
                             http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.1.xsd">
 
-<!--    reference to tht jdbc name space and schema definition file-->
+  <!--    reference to tht jdbc name space and schema definition file-->
 
-    <!--    to enable AspectJ support-->
-    <aop:aspectj-autoproxy/>
+  <!--    to enable AspectJ support-->
+  <aop:aspectj-autoproxy/>
 
-    <!--    embedded database definition and initialization-->
-    <jdbc:embedded-database id="dataSource"/>
-    <jdbc:initialize-database data-source="dataSource">
-        <jdbc:script location="classpath:db-schema.sql"/>
-    </jdbc:initialize-database>
+  <!--    embedded database initialization-->
+  <jdbc:embedded-database id="dataSource"/>
+  <jdbc:initialize-database data-source="dataSource">
+    <jdbc:script location="classpath:db-schema.sql"/>
+  </jdbc:initialize-database>
 
-    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
-        <property name="url" value="jdbc:h2:~/flightsmanagement"/>
-        <property name="username" value="sa"/>
-        <property name="password" value=""/>
-    </bean>
+  <!-- data source bean definition -->
+  <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+    <property name="url" value="jdbc:h2:~/flightsmanagement"/>
+    <property name="username" value="sa"/>
+    <property name="password" value=""/>
+  </bean>
 
-    <!-- Business logic beans -->
-    <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
-        <property name="name" value="Jim"/>
-        <property name="country" value="US" />
-    </bean>
+  <bean id="passengerDaoImpl" class="com.example.aop.flightsapp.dao.PassengerDaoImpl">
+    <property name="dataSource" ref="dataSource"/>
+  </bean>
 
-    <bean id="jack" class ="com.example.aop.flightsapp.domain.Passenger">
-        <property name="name" value="Jack"/>
-        <property name="country" value="UK" />
-    </bean>
+  <!--    try injecting in passengerDaoImpl only the JdbcTemplate-->
 
-    <bean id="jill" class ="com.example.aop.flightsapp.domain.Passenger">
-        <property name="name" value="Jill"/>
-        <property name="country" value="AU" />
-    </bean>
+  <bean id="jim" class ="com.example.aop.flightsapp.domain.Passenger">
+    <property name="name" value="Jim"/>
+    <property name="country" value="US" />
+  </bean>
 
-    <bean id="flight" class= "com.example.aop.flightsapp.domain.Flight">
-        <property name="id" value="AA1234"/>
-        <property name="company" value="ABC Flights"/>
-        <property name="passengers">
-            <list>
-                <ref bean="jim"/>
-                <ref bean="jack"/>
-                <ref bean="jill"/>
-            </list>
-        </property>
-    </bean>
+  <bean id="jack" class ="com.example.aop.flightsapp.domain.Passenger">
+    <property name="name" value="Jack"/>
+    <property name="country" value="UK" />
+  </bean>
 
-    <bean id="ticket" class= "com.example.aop.flightsapp.domain.Ticket">
-        <property name="passenger" ref="jim"/>
-        <property name="number" value="1234567890"/>
-    </bean>
+  <bean id="jill" class ="com.example.aop.flightsapp.domain.Passenger">
+    <property name="name" value="Jill"/>
+    <property name="country" value="AU" />
+  </bean>
 
-    <!-- AspectJ beans-->
-    <bean name="loggingAspect1" class="com.example.aop.flightsapp.aspect.LoggingAspect1"/>
-    <bean name="loggingAspect2" class="com.example.aop.flightsapp.aspect.LoggingAspect2"/>
+  <bean id="flight" class= "com.example.aop.flightsapp.domain.Flight">
+    <property name="id" value="AA1234"/>
+    <property name="company" value="ABC Flights"/>
+    <property name="passengers">
+      <list>
+        <ref bean="jim"/>
+        <ref bean="jack"/>
+        <ref bean="jill"/>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="ticket" class= "com.example.aop.flightsapp.domain.Ticket">
+    <property name="passenger" ref="jim"/>
+    <property name="number" value="1234567890"/>
+  </bean>
+
+  <bean name="loggingAspect1" class="com.example.aop.flightsapp.aspect.LoggingAspect1"/>
+  <bean name="loggingAspect2" class="com.example.aop.flightsapp.aspect.LoggingAspect2"/>
 
 </beans>
 ```
-We'll access the db by implementing the DAO design pattern. This pattern provides an abstract interface to a database, by exposing specific data operations without exposing the specificities of the used database. It maps the application calls to the persistence layer.
+We'll access the db by implementing the DAO design pattern. This pattern provides an abstract interface to a database, by exposing specific data operations without exposing the specificities of the used database. It maps the application calls to the persistence layer. Here are the DAO interface and classes. The data source bean is defined in the xml context definition above, and injected into the DAO implementations class through setter injection:
+```java
+import com.example.aop.flightsapp.domain.Passenger;
 
+public interface PassengerDao {
+    Passenger getPassenger(int id);
+}
+```
+```java
+import com.example.aop.flightsapp.domain.Passenger;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+
+public class PassengerDaoImpl implements PassengerDao{
+
+    // map of the passengers that have already been created
+    private static Map<Integer, Passenger> passengersMap = new HashMap<>();
+
+    private DataSource dataSource;
+    private JdbcTemplate jdbcTemplate;
+
+    private RowMapper<Passenger> rowMapper = (resultSet, rowNum) -> {
+        Passenger passenger = new Passenger();
+        passenger.setName(resultSet.getString("name"));
+        passenger.setCountry(resultSet.getString("country"));
+        return passenger;
+    };
+
+    public void setDataSource(DataSource dataSource){
+        this.dataSource = dataSource;
+        jdbcTemplate = new JdbcTemplate(this.dataSource);
+    }
+
+    private Passenger getById(int id){
+        String sql = "SELECT * FROM PASSENGER WHERE ID = ?";
+        return jdbcTemplate.queryForObject(sql,rowMapper, id);
+    }
+
+    @Override
+    public Passenger getPassenger(int id) {
+        if (null != passengersMap.get(id)){
+            return passengersMap.get(id);
+        }
+        Passenger passenger = getById(id);
+        return passenger;
+    }
+}
+```
 

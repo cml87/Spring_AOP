@@ -1,5 +1,6 @@
 package com.example.aop.flightsapp;
 
+import com.example.aop.flightsapp.dao.PassengerDao;
 import com.example.aop.flightsapp.domain.Flight;
 import com.example.aop.flightsapp.domain.Passenger;
 import com.example.aop.flightsapp.domain.Ticket;
@@ -34,6 +35,14 @@ public class FlightsManagement {
         Ticket ticket = (Ticket) context.getBean("ticket");
         System.out.println("Setting number of a ticket ...");
         ticket.setNumber("0987654321");
+
+        System.out.println("---------------");
+
+        PassengerDao passengerDaoImpl = (PassengerDao) context.getBean("passengerDaoImpl");
+
+        passengerDaoImpl.getPassenger(1);
+        passengerDaoImpl.getPassenger(1);
+
 
         // do we need to close the context explicitly??
         context.close();
