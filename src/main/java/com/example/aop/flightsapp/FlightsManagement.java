@@ -41,6 +41,7 @@ public class FlightsManagement {
         PassengerDao passengerDaoImpl = (PassengerDao) context.getBean("passengerDaoImpl");
 
         passengerDaoImpl.getPassenger(1);
+
         passengerDaoImpl.getPassenger(1);
 
 

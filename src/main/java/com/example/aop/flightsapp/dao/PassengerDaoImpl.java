@@ -29,7 +29,7 @@ public class PassengerDaoImpl implements PassengerDao{
     }
 
     private Passenger getById(int id){
-        String sql = "SELECT * FROM PASSENGER WHERE ID = ?";
+        String sql = "SELECT * FROM PASSENGERS WHERE ID = ?";
         return jdbcTemplate.queryForObject(sql,rowMapper, id);
     }
 
