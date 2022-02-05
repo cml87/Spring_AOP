@@ -33,6 +33,10 @@ public class PassengerDaoImpl implements PassengerDao{
         return jdbcTemplate.queryForObject(sql,rowMapper, id);
     }
 
+    public static Map<Integer, Passenger> getPassengersMap() {
+        return passengersMap;
+    }
+
     @Override
     public Passenger getPassenger(int id) {
         if (null != passengersMap.get(id)){

@@ -44,7 +44,6 @@ public class FlightsManagement {
 
         passengerDaoImpl.getPassenger(1);
 
-
         // do we need to close the context explicitly??
         context.close();
 

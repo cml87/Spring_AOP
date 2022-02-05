@@ -68,6 +68,6 @@
 
     <bean name="loggingAspect1" class="com.example.aop.flightsapp.aspect.LoggingAspect1"/>
     <bean name="loggingAspect2" class="com.example.aop.flightsapp.aspect.LoggingAspect2"/>
-
+    <bean name="cachingAspect" class="com.example.aop.flightsapp.aspect.CachingAspect"/>
 
 </beans>
