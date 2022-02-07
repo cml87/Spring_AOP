@@ -41,8 +41,15 @@ public class FlightsManagement {
         PassengerDao passengerDaoImpl = (PassengerDao) context.getBean("passengerDaoImpl");
 
         passengerDaoImpl.getPassenger(1);
+        System.out.println("looking for passenger with id " + 9807);
+        passengerDaoImpl.getPassenger(9807);
 
-        passengerDaoImpl.getPassenger(1);
+        Passenger mike = new Passenger();
+        mike.setName("Mike");
+        mike.setCountry("XX");
+
+        passengerDaoImpl.insertPassenger(mike);
+
 
         // do we need to close the context explicitly??
         context.close();
