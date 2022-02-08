@@ -1317,4 +1317,52 @@ public class PassengerDoesNotExistAspect {
     }
 }
 ```
-Notice that when advicing methods with Spring AOP we always aim to advice public and @Override methods of a class that implements a given interface. Spring AOP needs this in order to work (the interface, as we say above).
+Notice that when advicing methods with Spring AOP we always aim to advice public and @Override annotated methods of a class that implements a given interface (where the methods are defined). Spring AOP needs this in order to work (the interface, as we say above).
+
+Last, here is another aspect designed to log in/out when calling all public methods in the `PassengerDaoImpl` class, for example `getPassenger()` and `setPassenger()`:
+```java
+@Aspect
+@Order(1)
+public class LoggingAspect3 {
+
+    private Logger logger = null;//Logger.getLogger(LoggingAspect1.class.getName());
+
+    // logger format set up
+    {
+        InputStream stream = LoggingAspect3.class.getClassLoader().getResourceAsStream("logging.properties");
+        try {
+            LogManager.getLogManager().readConfiguration(stream);
+            logger = Logger.getLogger(LoggingAspect3.class.getName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 1. log in/out for any public method  in PassengerDaoImpl
+    @Before("allPassengerDaoImplPublicMethods()")
+    public void logIn() {
+        logger.info("in");
+    }
+
+    @AfterReturning("allPassengerDaoImplPublicMethods()")
+    public void logOut() throws InterruptedException {
+        logger.info("out");
+        Thread.sleep(200);
+    }
+
+    @Pointcut("execution(public * com.example.aop.flightsapp.dao.PassengerDaoImpl.*(..))")
+    public void allPassengerDaoImplPublicMethods() {
+    }
+}
+```
+
+## Spring AOP Introductions
+Introductions allow a class implement new interfaces at run time. We can make even one particular instance of the class to implement the new interface, instead of the entire class. It allows declaring a so called "mixing type" which is a type with multiple inheritance. We may use it to add optional features to a class. 
+
+We advise object programmatically through
+- Default Introduction adviser 
+- Delegate Introduction interceptor
+- Proxy factory classes
+
+We advise object declaratively through
+- DeclaredParents
