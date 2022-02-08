@@ -1,6 +1,5 @@
 package com.example.aop.flightsapp.aspect;
 
-import com.example.aop.flightsapp.exception.CountryDoesNotExistException;
 import com.example.aop.flightsapp.exception.PassengerDoesNotExistException;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;

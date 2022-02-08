@@ -42,7 +42,7 @@ public class FlightsManagement {
 
         passengerDaoImpl.getPassenger(1);
         System.out.println("looking for passenger with id " + 9807);
-        passengerDaoImpl.getPassenger(9807);
+        //passengerDaoImpl.getPassenger(9807);
 
         Passenger mike = new Passenger();
         mike.setName("Mike");
