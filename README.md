@@ -1359,6 +1359,10 @@ public class LoggingAspect3 {
 ## Spring AOP Introductions
 Introductions allow a class implement new interfaces at run time. We can make even one particular instance of the class to implement the new interface, instead of the entire class. It allows declaring a so called "mixing type" which is a type with multiple inheritance. We may use it to add optional features to a class. 
 
+
+The class `Flight` needs to implement the additional interface `Flyer`.
+
+
 We advise object programmatically through
 - Default Introduction adviser 
 - Delegate Introduction interceptor
@@ -1366,3 +1370,58 @@ We advise object programmatically through
 
 We advise object declaratively through
 - DeclaredParents
+
+
+We'll test Spring Introduction with @Test methods. We need the following dependencies in the pom: 
+```xml
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-runner</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
+```
+In src/test/java/ we'll then have
+```java
+package com.example.aop.introduction;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class FlyerTest {
+
+    @Test
+    public void flyerTest() {
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("introduction/aop.xml");
+
+        Flight flight = (Flight) context.getBean("flight");
+
+        context.close();
+    }
+}
+```
+To begin with, this is our xml context definition with only one bean:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+    <aop:aspectj-autoproxy/>
+
+    <bean id="flight" class= "com.example.aop.introduction.Flight">
+        <property name="id" value="AA1234"/>
+        <property name="company" value="ABC Flights"/>
+    </bean>
+</beans>
+```
+
+
