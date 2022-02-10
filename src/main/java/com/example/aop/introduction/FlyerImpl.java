@@ -1,6 +1,8 @@
 package com.example.aop.introduction;
 
-public class FlyerImpl implements Flyer{
+import org.springframework.aop.support.DelegatingIntroductionInterceptor;
+
+public class FlyerImpl extends DelegatingIntroductionInterceptor implements Flyer{
     @Override
     public void takeOff() {
         System.out.println("Taking off");

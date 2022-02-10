@@ -1425,3 +1425,6 @@ To begin with, this is our xml context definition with only one bean:
 ```
 
 
+DefaultIntroductionAdvisor is the default implementations for advisor that performs one or more AOP introductions.
+ProxyFactory is the factory for AOP proxies <u>to be used programmatically</u>. It allows us to obtain and configure AOP proxy instances in our code. 
+
