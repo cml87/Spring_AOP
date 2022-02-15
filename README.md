@@ -1499,43 +1499,5 @@ The `ProxyFlight` object we got is the "mixing type". It has multiple inheritanc
 We advise object declaratively through the  `@DeclaredParents` annotation.
 
 
-We'll use Java configuration, much better :)
+We'll use Java configuration, much better
 
-
-We'll test Spring Introduction with @Test methods. We need the following dependencies in the pom: 
-```xml
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.6.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-runner</artifactId>
-            <version>1.6.0</version>
-            <scope>test</scope>
-```
-In src/test/java/ we'll then have
-```java
-package com.example.aop.introduction;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-
-
-
-
-
-DefaultIntroductionAdvisor is the default implementations for advisor that performs one or more AOP introductions.
-ProxyFactory is the factory for AOP proxies <u>to be used programmatically</u>. It allows us to obtain and configure AOP proxy instances in our code. 
-
-
-
-
-- downcasting/upcasting
-- why do we need to call the constructor of superclass
-- proxies in Spring, CGLIB etc
