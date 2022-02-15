@@ -1,4 +1,4 @@
-package com.example.aop.introduction;
+package com.example.aop.introduction.programmatically;
 
 import org.springframework.aop.support.DelegatingIntroductionInterceptor;
 

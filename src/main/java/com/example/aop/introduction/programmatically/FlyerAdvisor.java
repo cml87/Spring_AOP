@@ -1,6 +1,5 @@
-package com.example.aop.introduction;
+package com.example.aop.introduction.programmatically;
 
-import org.aopalliance.aop.Advice;
 import org.springframework.aop.support.DefaultIntroductionAdvisor;
 
 // Default implementation for advisors that performs one or more introductions

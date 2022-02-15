@@ -1,4 +1,4 @@
-package com.example.aop.introduction;
+package com.example.aop.introduction.declaratively.domain;
 
 public class Flight {
 

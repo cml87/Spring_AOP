@@ -1,5 +1,8 @@
-package com.example.aop.introduction;
+package com.example.aop.introduction.programmatically;
 
+import com.example.aop.introduction.programmatically.Flight;
+import com.example.aop.introduction.programmatically.Flyer;
+import com.example.aop.introduction.programmatically.FlyerAdvisor;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -42,7 +45,7 @@ public class FlyerTest {
         // The proxy class belongs to a class that extends Flight
        // assertTrue(proxyFlight instanceof FlyerImpl);
 
-        // The effective type of the proxy class will be something like: com.example.aop.introduction.Flight$$EnhancerBySpringCGLIB$$a33440e5
+        // The effective type of the proxy class will be something like: com.example.aop.introduction.programmatically.Flight$$EnhancerBySpringCGLIB$$a33440e5
         // ie. a CGLIB class
         System.out.println("The effective class of proxyFlight object is: " + proxyFlight.getClass().getName());
 

@@ -1382,6 +1382,7 @@ We'll test Spring Introduction with `@Test methods`. We'll need the following de
             <scope>test</scope>
 ```
 This will be our xml context definition with only one bean:
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -1390,7 +1391,7 @@ This will be our xml context definition with only one bean:
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 
-    <bean id="flight" class= "com.example.aop.introduction.Flight">
+    <bean id="flight" class="com.example.aop.introduction.programmatically.Flight">
         <property name="id" value="AA1234"/>
         <property name="company" value="ABC Flights"/>
     </bean>
@@ -1479,7 +1480,7 @@ public class FlyerTest {
         // The proxy class is a class that extends Flight, it doesn't extends FlyerImpl
        // assertTrue(proxyFlight instanceof FlyerImpl);
 
-        // The effective type of the proxy class will be something like: com.example.aop.introduction.Flight$$EnhancerBySpringCGLIB$$a33440e5
+        // The effective type of the proxy class will be something like: com.example.aop.introduction.programmatically.Flight$$EnhancerBySpringCGLIB$$a33440e5
         // ie. a CGLIB class
         System.out.println("The effective class of proxyFlight object is: " + proxyFlight.getClass().getName());
 
@@ -1494,21 +1495,11 @@ Schematically, this is what we have accomplished:
 
 The `ProxyFlight` object we got is the "mixing type". It has multiple inheritance in that it implements interface `Flyer` delegating the implementation of methods in-there to the `FlyerImpl` class.
 
+## Spring AOP Introductions, declaratively
+We advise object declaratively through the  `@DeclaredParents` annotation.
 
 
-The class `Flight` needs to implement the additional interface `Flyer`.
-
-
-We advise object programmatically through
-- Default Introduction adviser 
-- Delegate Introduction interceptor
-- Proxy factory classes
-
-
-We advise object declaratively through
-- DeclaredParents
-
-
+We'll use Java configuration, much better :)
 
 We'll test Spring Introduction with @Test methods. We need the following dependencies in the pom: 
 ```xml
