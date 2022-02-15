@@ -1363,9 +1363,39 @@ The pattern is as fallow: we declare the interface we want to add to the target 
 
 This patterns needs of three Spring classes: 
 - `DelegatingIntroductionInterceptor`: the class implementing the interface with the additional behavior needs extend it
-- `DefaultIntroductionAdvisor`: the advisor class needs to extend it
-- `ProxyFactory`: here we'll set the advisor class with method `setAdvisor()`, so the proxy we are building will get the new behaviour
+- `DefaultIntroductionAdvisor`: the default implementations for advisor that performs one or more AOP introductions. The advisor class needs to extend it.
+- `ProxyFactory`: the factory class for AOP proxies to be used programmatically. It allows us to obtain and configure AOP proxy instances in our code. Here we'll set the advisor class with method `setAdvisor()`, so the proxy we are building will get the new behaviour.
 
+We'll test Spring Introduction with `@Test methods`. We'll need the following dependencies in the pom, and the following xml configuration of our context:
+```xml
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-runner</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
+```
+This will be our xml context definition with only one bean:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+
+    <bean id="flight" class= "com.example.aop.introduction.Flight">
+        <property name="id" value="AA1234"/>
+        <property name="company" value="ABC Flights"/>
+    </bean>
+</beans>
+```
 In the fallowing example we have a class `Flight` that needs to implement the additional behaviour (methods) declared in interface `Flyer`:
 ```java
 public class Flight {
@@ -1411,7 +1441,7 @@ public class FlyerAdvisor extends DefaultIntroductionAdvisor {
     
 }
 ```
-And this is how we use this in the main(), though here we use a test class. We'll be declaring a `Flight` object and adding the additional behaviour (methods) of the `Flyer` interface programmatically (at run time):
+Notice this class extends `DefaultIntroductionAdvisor`. Now, this is how we use this in the main(), though here we use a test class. We'll be declaring a `Flight` object and adding the additional behaviour (methods) of the `Flyer` interface programmatically (at run time):
 ```java
 public class FlyerTest {
 
@@ -1457,12 +1487,14 @@ public class FlyerTest {
     }
 }
 ```
+Schematically, this is what we have accomplished:
+
+![image info](./pictures/introductions_Flight_example.jpg)
 
 
+The `ProxyFlight` object we got is the "mixing type". It has multiple inheritance in that it implements interface `Flyer` delegating the implementation of methods in-there to the `FlyerImpl` class.
 
 
-
-<<<<<<< HEAD
 
 The class `Flight` needs to implement the additional interface `Flyer`.
 
@@ -1471,12 +1503,11 @@ We advise object programmatically through
 - Default Introduction adviser 
 - Delegate Introduction interceptor
 - Proxy factory classes
-=======
 
->>>>>>> add notes
 
 We advise object declaratively through
 - DeclaredParents
+
 
 
 We'll test Spring Introduction with @Test methods. We need the following dependencies in the pom: 
@@ -1502,38 +1533,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-public class FlyerTest {
 
-    @Test
-    public void flyerTest() {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("introduction/aop.xml");
 
-        Flight flight = (Flight) context.getBean("flight");
 
-        context.close();
-    }
-}
-```
-To begin with, this is our xml context definition with only one bean:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:aop="http://www.springframework.org/schema/aop"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
-    <aop:aspectj-autoproxy/>
-
-    <bean id="flight" class= "com.example.aop.introduction.Flight">
-        <property name="id" value="AA1234"/>
-        <property name="company" value="ABC Flights"/>
-    </bean>
-</beans>
-```
 
 
 DefaultIntroductionAdvisor is the default implementations for advisor that performs one or more AOP introductions.
 ProxyFactory is the factory for AOP proxies <u>to be used programmatically</u>. It allows us to obtain and configure AOP proxy instances in our code. 
+
 
 
 - downcasting/upcasting
