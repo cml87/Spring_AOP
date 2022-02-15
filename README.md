@@ -1356,9 +1356,113 @@ public class LoggingAspect3 {
 }
 ```
 
-## Spring AOP Introductions
-Introductions allow a class implement new interfaces at run time. We can make even one particular instance of the class to implement the new interface, instead of the entire class. It allows declaring a so called "mixing type" which is a type with multiple inheritance. We may use it to add optional features to a class. 
+## Spring AOP Introductions, programmatically
+Introductions is a Spring AOP technique allowing a given instance of a class to implement additional interfaces at run time, ie. we can add methods to the class. We can make a particular instance of the class to implement a new interface, instead of the entire class. It allows declaring a so called "mixing type" which is a type with multiple inheritance.
 
+The pattern is as fallow: we declare the interface we want to add to the target class, as well as a class providing implementations for its methods. These implementations will be used for the added behaviour to the target class. We then wrap this class into an "advisor" class. Last, we add the advisor class to the proxy factory from which we'll get the proxy of the factory class.
+
+This patterns needs of three Spring classes: 
+- `DelegatingIntroductionInterceptor`: the class implementing the interface with the additional behavior needs extend it
+- `DefaultIntroductionAdvisor`: the advisor class needs to extend it
+- `ProxyFactory`: here we'll set the advisor class with method `setAdvisor()`, so the proxy we are building will get the new behaviour
+
+In the fallowing example we have a class `Flight` that needs to implement the additional behaviour (methods) declared in interface `Flyer`:
+```java
+public class Flight {
+    private String id;
+    private String company;
+
+    public String getId() {return id;}
+    public void setId(String id) {this.id = id;}
+    public String getCompany() {return company;}
+    public void setCompany(String company) {this.company = company;}
+}
+```
+```java
+// This is the additional interface we want the Flight object to implement.
+// The FlyerImpl class will provide implementations for its methods.
+public interface Flyer {
+    void takeOff();
+    void fly();
+    void land();
+}
+```
+```java
+// The additional methods we want to add to the proxied (target) class will be delegated to this class 
+public class FlyerImpl extends DelegatingIntroductionInterceptor implements Flyer{
+    @Override
+    public void takeOff() {  System.out.println("Taking off");  }
+
+    @Override
+    public void fly() { System.out.println("Flying"); }
+
+    @Override
+    public void land() { System.out.println("Landing"); }
+}
+```
+Notice how `FlyerImpl` extends `DelegatingIntroductionInterceptor`. The advisor class wrapping the class `FlyerImpl` with the additional behaviour  is declared as follows:
+```java
+// Default implementation for advisors that performs one or more introductions
+public class FlyerAdvisor extends DefaultIntroductionAdvisor {
+
+    public FlyerAdvisor() {
+        super(new FlyerImpl());
+    }
+    
+}
+```
+And this is how we use this in the main(), though here we use a test class. We'll be declaring a `Flight` object and adding the additional behaviour (methods) of the `Flyer` interface programmatically (at run time):
+```java
+public class FlyerTest {
+
+    @Test
+    public void flyerTest() {
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("introduction/aop.xml");
+
+        // the instance (Spring bean) we want to add the additional behaviour
+        Flight flight = (Flight) context.getBean("flight");
+
+        // the advisor class; it carries the additional behaviour we wanna add!
+        FlyerAdvisor flyerAdvisor = new FlyerAdvisor();
+        
+        
+        ProxyFactory proxyFactory = new ProxyFactory();
+        proxyFactory.setTarget(flight);  // the specific instance 'flight' of the Flight class will implement
+                                        // the additional interface 'Flyer'
+        proxyFactory.addAdvisor(flyerAdvisor);
+        proxyFactory.setOptimize(true); // to use CGLIB  strategy. The proxy class will be a subclass of Flight
+
+        // we get the proxy object having the new additional behaviour
+        Flight proxyFlight = (Flight) proxyFactory.getProxy();
+
+        // Show that the proxy class is a subclass of Flight. Calling methods of the superclass
+        assertTrue(proxyFlight instanceof Flight);
+        System.out.println(proxyFlight.getId());
+        System.out.println(proxyFlight.getCompany());
+
+        // Show also that the proxy class implements the Flyer interface. Calling the methods of this interface
+        assertTrue(proxyFlight instanceof Flyer);
+        ((Flyer) proxyFlight).takeOff();
+        ((Flyer) proxyFlight).fly();
+        ((Flyer) proxyFlight).land();
+
+        // The proxy class is a class that extends Flight, it doesn't extends FlyerImpl
+       // assertTrue(proxyFlight instanceof FlyerImpl);
+
+        // The effective type of the proxy class will be something like: com.example.aop.introduction.Flight$$EnhancerBySpringCGLIB$$a33440e5
+        // ie. a CGLIB class
+        System.out.println("The effective class of proxyFlight object is: " + proxyFlight.getClass().getName());
+
+        context.close();
+    }
+}
+```
+
+
+
+
+
+<<<<<<< HEAD
 
 The class `Flight` needs to implement the additional interface `Flyer`.
 
@@ -1367,6 +1471,9 @@ We advise object programmatically through
 - Default Introduction adviser 
 - Delegate Introduction interceptor
 - Proxy factory classes
+=======
+
+>>>>>>> add notes
 
 We advise object declaratively through
 - DeclaredParents
@@ -1428,3 +1535,7 @@ To begin with, this is our xml context definition with only one bean:
 DefaultIntroductionAdvisor is the default implementations for advisor that performs one or more AOP introductions.
 ProxyFactory is the factory for AOP proxies <u>to be used programmatically</u>. It allows us to obtain and configure AOP proxy instances in our code. 
 
+
+- downcasting/upcasting
+- why do we need to call the constructor of superclass
+- proxies in Spring, CGLIB etc

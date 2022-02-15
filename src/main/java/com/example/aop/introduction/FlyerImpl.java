@@ -2,6 +2,8 @@ package com.example.aop.introduction;
 
 import org.springframework.aop.support.DelegatingIntroductionInterceptor;
 
+// The additional methods we want to add to the proxied class will be delegated to
+// this class
 public class FlyerImpl extends DelegatingIntroductionInterceptor implements Flyer{
     @Override
     public void takeOff() {

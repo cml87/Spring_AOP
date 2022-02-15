@@ -17,7 +17,10 @@ public class FlyerTest {
 
         FlyerAdvisor flyerAdvisor = new FlyerAdvisor();
         ProxyFactory proxyFactory = new ProxyFactory();
-        proxyFactory.setTarget(flight);
+
+
+        proxyFactory.setTarget(flight);  // the specific instance 'flight' of the Flight class will implement
+                                        // the additional interface 'Flyer'
         proxyFactory.addAdvisor(flyerAdvisor);
         proxyFactory.setOptimize(true); // to use CGLIB  strategy. The proxy class will be a subclass of Flight
 
@@ -30,7 +33,7 @@ public class FlyerTest {
         System.out.println(proxyFlight.getCompany()); // calling a method of the superclass
 
 
-        // Show that the proxy class implements the Flyer interface
+        // Show also that the proxy class implements the Flyer interface. Calling the methods of this interface
         assertTrue(proxyFlight instanceof Flyer);
         ((Flyer) proxyFlight).takeOff();
         ((Flyer) proxyFlight).fly();
