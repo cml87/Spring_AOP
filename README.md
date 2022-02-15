@@ -1501,6 +1501,7 @@ We advise object declaratively through the  `@DeclaredParents` annotation.
 
 We'll use Java configuration, much better :)
 
+
 We'll test Spring Introduction with @Test methods. We need the following dependencies in the pom: 
 ```xml
         <dependency>
@@ -1531,6 +1532,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 DefaultIntroductionAdvisor is the default implementations for advisor that performs one or more AOP introductions.
 ProxyFactory is the factory for AOP proxies <u>to be used programmatically</u>. It allows us to obtain and configure AOP proxy instances in our code. 
+
 
 
 
