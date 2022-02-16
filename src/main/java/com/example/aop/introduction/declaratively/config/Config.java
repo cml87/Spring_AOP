@@ -9,13 +9,14 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @Configuration
 @EnableAspectJAutoProxy // equivalent of     <aop:aspectj-autoproxy/> in xml configuration, finally!
-@ComponentScan
+@ComponentScan(basePackages = "com.example.aop.introduction.declaratively")
 public class Config {
 
-    @Bean
-    public FlightAspect aspect(){
-        return new FlightAspect();
-    }
+    // This bean will be discovered through component scan, so there is no need to declare it here
+//    @Bean
+//    public FlightAspect aspect(){
+//        return new FlightAspect();
+//    }
 
 
     @Bean

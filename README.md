@@ -1357,16 +1357,16 @@ public class LoggingAspect3 {
 ```
 
 ## Spring AOP Introductions, programmatically
-Introductions is a Spring AOP technique allowing a given instance of a class to implement additional interfaces at run time, ie. we can add methods to the class. We can make a particular instance of the class to implement a new interface, instead of the entire class. It allows declaring a so called "mixing type" which is a type with multiple inheritance.
+Introductions is a Spring AOP technique allowing a given instance of a class to implement additional interfaces at run time, ie. we can add methods to a particular instance of the class, instead of the entire class (by subclassing it). It allows declaring a so called "mixing type" which is a type with multiple inheritance, as we'll see later.
 
-The pattern is as fallow: we declare the interface we want to add to the target class, as well as a class providing implementations for its methods. These implementations will be used for the added behaviour to the target class. We then wrap this class into an "advisor" class. Last, we add the advisor class to the proxy factory from which we'll get the proxy of the factory class.
+The pattern is as fallow: we declare the interface we want to add to the target class, as well as a class providing implementations for the interface's methods. These implementations will be used for the added behaviour to the target class. We then wrap this class into an "advisor" class. Last, we add the advisor class to the proxy factory from which we'll get the proxy of the target class.
 
-This patterns needs of three Spring classes: 
+The Spring classes needed in this pattern are: 
 - `DelegatingIntroductionInterceptor`: the class implementing the interface with the additional behavior needs extend it
 - `DefaultIntroductionAdvisor`: the default implementations for advisor that performs one or more AOP introductions. The advisor class needs to extend it.
 - `ProxyFactory`: the factory class for AOP proxies to be used programmatically. It allows us to obtain and configure AOP proxy instances in our code. Here we'll set the advisor class with method `setAdvisor()`, so the proxy we are building will get the new behaviour.
 
-We'll test Spring Introduction with `@Test methods`. We'll need the following dependencies in the pom, and the following xml configuration of our context:
+We'll test Spring Introduction with `@Test` methods. We'll need the following dependencies in the pom, and the following xml configuration of our context:
 ```xml
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -1380,9 +1380,9 @@ We'll test Spring Introduction with `@Test methods`. We'll need the following de
             <artifactId>junit-platform-runner</artifactId>
             <version>1.6.0</version>
             <scope>test</scope>
+        </dependency>
 ```
-This will be our xml context definition with only one bean:
-
+This will be our xml context definition with only one bean of type `Flight`:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -1442,7 +1442,7 @@ public class FlyerAdvisor extends DefaultIntroductionAdvisor {
     
 }
 ```
-Notice this class extends `DefaultIntroductionAdvisor`. Now, this is how we use this in the main(), though here we use a test class. We'll be declaring a `Flight` object and adding the additional behaviour (methods) of the `Flyer` interface programmatically (at run time):
+Notice this class extends `DefaultIntroductionAdvisor`. Now, this is how we would use this in the main(), though here we use a test class. We'll be declaring a `Flight` object and adding the additional behaviour (methods) of the `Flyer` interface programmatically (at run time):
 ```java
 public class FlyerTest {
 
@@ -1472,6 +1472,7 @@ public class FlyerTest {
         System.out.println(proxyFlight.getCompany());
 
         // Show also that the proxy class implements the Flyer interface. Calling the methods of this interface
+        // implemented by FlyerImpl
         assertTrue(proxyFlight instanceof Flyer);
         ((Flyer) proxyFlight).takeOff();
         ((Flyer) proxyFlight).fly();
@@ -1493,11 +1494,80 @@ Schematically, this is what we have accomplished:
 ![image info](./pictures/introductions_Flight_example.jpg)
 
 
-The `ProxyFlight` object we got is the "mixing type". It has multiple inheritance in that it implements interface `Flyer` delegating the implementation of methods in-there to the `FlyerImpl` class.
+The `Flight proxyFlight;` object we got is the "mixing type". It has multiple inheritance in that it implements interface `Flyer` delegating the implementation of methods in-there to the `FlyerImpl` class.
 
 ## Spring AOP Introductions, declaratively
-We advise object declaratively through the  `@DeclaredParents` annotation.
+Now we'll do the same declaratively, and using Java configuration (much better). We advise object declaratively through the `@DeclaredParents` annotation used in a `@Aspect` class:
+```java
+@Aspect
+@Component
+public class FlightAspect {
+
+    @DeclareParents(value = "com.example.aop.introduction.declaratively.domain.Flight", defaultImpl = FlyerImpl.class)
+    private Flyer flyer;
+
+}
+```
+The `@DeclaredParents` annotation annotates the interface we want to use for a given introduction, in this case `Flyer`. It receives as arguments the class we want to proxy, `value`, and the implementation of the introduction interface we want to use, `defaultImpl`.
+The target class `Flight`, the interface `Flyer`, and the interface implementation `FlyerImpl` are the same as above. The only difference is that `FlyerImpl` does not need to extend `DelegatingIntroductionInterceptor` anymore, just implement the `Flyer` interface.
+
+We configure the aspect class bean, `FlightAspect`, and the target class bean, `Flight`, in a Java configuration class. The aspect class will be discovered with a component scan:
+```java
+@Configuration
+@EnableAspectJAutoProxy // equivalent of <aop:aspectj-autoproxy/> in xml configuration, finally!
+@ComponentScan(basePackages = "com.example.aop.introduction.declaratively")
+public class Config {
+
+    // This bean will be discovered through component scan, so there is no need to declare it here
+    // @Bean
+    // public FlightAspect aspect(){
+    //    return new FlightAspect();
+    //}
+
+    @Bean
+    public Flight flight(){
+        Flight flight = new Flight();
+        flight.setId("AA1234");
+        flight.setCompany("ABC Flights");
+        return flight;
+    }
+}
+```
+Notice that when we do introductions declaratively, as in this case, both the aspect class and the class we want to proxy must be Spring managed beans. The target class `Flight` in this case will be obtained from the container as a proxied bean automatically, whenever we ask for such bean. I think Spring will be using here the class `ProxyFactoryBean`. This is how we test our proxied `Flight` bean, still in a test class:
+```java
+@ExtendWith(SpringExtension.class)  // I don't know what is this
+@ContextConfiguration(classes = com.example.aop.introduction.declaratively.config.Config.class)
+public class FlyerTest {
+
+    @Autowired
+    private Flight flight;  // this will be autowired already proxied !
+
+    @Test
+    public void flyerTest(){
+        assertTrue(flight instanceof Flight);
+        System.out.println(flight.getId());
+        System.out.println(flight.getCompany());
+
+        assertTrue(flight instanceof Flight);
+
+        assertTrue(flight instanceof Flyer);
+        // will print something like: com.example.aop.introduction.declaratively.domain.Flight$$EnhancerBySpringCGLIB$$abb9b521
+        System.out.println("The effective class of flight object is: " + flight.getClass().getName());
+
+        ((Flyer) flight).takeOff();
+        ((Flyer) flight).fly();
+        ((Flyer) flight).land();
+
+    }
+}
+```
 
 
-We'll use Java configuration, much better
+See Spring & CGLIB: Finally Understandable | Spring Core - Masterclass, at https://www.youtube.com/watch?v=hskHMSlvm6U&list=PLz-qdc-PbYk6ikoEsdn4VZ4HUkKPVPMXp&index=5 for Spring proxies through the `Enhancer` class and CGLIB.
+
+
+
+
+
+
 
