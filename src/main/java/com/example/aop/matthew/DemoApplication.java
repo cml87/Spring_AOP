@@ -10,5 +10,8 @@ public class DemoApplication {
         service.doSomething();
         System.out.println();
         service.doSomeOtherThing(3);
+
+        System.out.println();
+        service.sayWord("Hello");
     }
 }

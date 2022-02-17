@@ -13,4 +13,8 @@ public class MyService {
         System.out.println("doing a different business method. Number: "+number);
     }
 
+    public void sayWord(String word){
+        System.out.println("I'm telling: " + word);
+    }
+
 }

@@ -151,13 +151,22 @@ public static Passenger getPassenger(int id){
         }
 ```
 
-With AspectJ it is also possible to intercept the writing of particular fields of an object.
+With AspectJ it is also possible to intercept the writing of particular fields of an object. 
 
 ## Java based Spring AOP. (Matthew course)
+We'll start by giving some examples of Spring AOP with using Java configuration. The next paragraph though will give many others, but using xml configuration.
 
-Advice methods will be called and run when their pointcut matches a given join point. At run time, in fact, when a pointcut matches a join point, an object of type `JoinPoint` is created and loaded with all the information of the invocation. The advice method may receive in its arguments the `JoinPoint` object and use its content for any logic. For example, we can use the arguments and the method signature of the intercepted method programmatically in the advice method.
+Advice methods will be called and run when their pointcut matches a given join point. At run time, in fact, when a pointcut matches a join point, an object of type `JoinPoint` is created and loaded with all the information of the invocation. The advice method may receive in its arguments the `JoinPoint` object and use its content for any logic. For example, we can use the arguments and the method signature of the intercepted method programmatically in the advice method. This is illustrated in the example below, in the advice method `intercept3()`.
 
-Aspect classes need to be also Spring managed beans. Therefore, we must annotate them with `@Component` besides `@Aspect`
+`JoinPoint` and `ProceedingJoinPoint` are interfaces actually, both from `org.aspectj.lang`. They are implemented by `MethodInvocationProceedingJoinPoint` from `org.springframework.aop.aspectj`, but also by `JoinPointImpl` from `org.aspectj.runtime.reflect`:
+```text
+(I) JoinPoint (org.aspectj.lang)
+  (I) ProceedingJoinPoint (org.aspectj.lang)
+    (C) JoinPointImpl (org.aspectj.runtime.reflect)
+    (C) MethodInvocationProceedingJoinPoint (org.springframework.aop.aspectj)
+```
+
+Aspect classes need to be also Spring managed beans. Therefore, we must annotate them with `@Component`, besides `@Aspect`
 ```java
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.After;
@@ -209,7 +218,6 @@ Here is the configuration class to discover the beans. The annotation `@EnableAs
 @ComponentScan("com.example.aop.matthew")
 @EnableAspectJAutoProxy
 public class AppConfig {
-
 }
 ```
 In the main():
@@ -235,13 +243,50 @@ doing a different business method. Number: 3
 Using Join Point [3]
 ```
 
+The `@Around` annotation wraps the whole execution of an adviced method. An `@Around` annotated method commonly receives as argument a `ProceedingJoinPoint`, which give the additional method `proceed()` to let the method proceed, only if we wish so according to some logic. For example, consider the advice method `interceptor4()` below:
+```java
+@Service
+public class MyService {
+    public void sayWord(String word){
+        System.out.println("I'm telling: " + word);
+    }
+}
+```
+```java
+@Aspect
+@Component // aspects need to be Spring managed beans as well!
+public class MyAspect {
+    @Around("execution(void MyService.sayWord(String))")
+    public void interceptor4(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
 
+        System.out.println("sayWord() called ! ");
+        Object[] args = proceedingJoinPoint.getArgs();
+        String word = args[0].toString();
 
+        if ( word.length() > 8)
+            System.out.println("Ignoring. Word is too long");
+        else
+            proceedingJoinPoint.proceed();
 
-
-
-
-
+        System.out.println("Args are: "+ Arrays.toString(proceedingJoinPoint.getArgs()));
+    }
+}
+```
+```java
+public class DemoApplication {
+    public static void main(String[] args) {
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        MyService service = context.getBean(MyService.class);
+        service.sayWord("Hello, my name is Camilo");
+    }
+}
+```
+This would print
+```text
+sayWord() called ! 
+Ignoring. Word is too long  // instead of "I'm telling: Hello, my name is John"
+Args are: [Hello, my name is John]
+```
 
 ## XML based Spring AOP
 
