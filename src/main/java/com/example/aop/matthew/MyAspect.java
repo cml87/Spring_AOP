@@ -6,6 +6,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+
 @Aspect
 @Component // aspects need to be Spring managed beans as well!
 public class MyAspect {
@@ -22,9 +24,10 @@ public class MyAspect {
         System.out.println("Intercepted all!");
     }
 
+    // using the JoinPoint
     @After("execution(void MyService.*(int))")
     public void intercept3(JoinPoint joinPoint){
-        System.out.println("Intercepted!");
+        System.out.println("Using Join Point "+ Arrays.toString(joinPoint.getArgs()));
     }
 
 }

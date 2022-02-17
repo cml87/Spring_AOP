@@ -155,12 +155,85 @@ With AspectJ it is also possible to intercept the writing of particular fields o
 
 ## Java based Spring AOP. (Matthew course)
 
+Advice methods will be called and run when their pointcut matches a given join point. At run time, in fact, when a pointcut matches a join point, an object of type `JoinPoint` is created and loaded with all the information of the invocation. The advice method may receive in its arguments the `JoinPoint` object and use its content for any logic. For example, we can use the arguments and the method signature of the intercepted method programmatically in the advice method.
 
+Aspect classes need to be also Spring managed beans. Therefore, we must annotate them with `@Component` besides `@Aspect`
+```java
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 
-Advice methods will be called and run when their pointcut matches a given join point. At run time, in fact, when a pointcut matches a join point, an object of type `JoinPoint` is created and loaded with all the information of the invocation. The advice method can receive in its arguments the `JoinPoint` object and use its content for any logic. For example, we can use the arguments and the methods sugnature of the intercepted method programmatically in the advice method.
+@Aspect
+@Component // aspects need to be Spring managed beans as well!
+public class MyAspect {
 
+    // the class MyService will be looked for in this package
+    @Before("execution(void MyService.doSomething(..))")
+    public void intercept(){
+        System.out.println("Intercepted!");
+    }
 
+    // intercept all methods
+    @Before("execution(void MyService.*(..))")
+    public void intercept2(){
+        System.out.println("Intercepted all!");
+    }
+
+    // using the JoinPoint
+    @After("execution(void MyService.*(int))")
+    public void intercept3(JoinPoint joinPoint){
+        System.out.println("Using Join Point "+ Arrays.toString(joinPoint.getArgs()));
+    }
+}
+```
+```java
+@Service
+public class MyService {
+
+    public void doSomething(){
+        System.out.println("doing business method");
+    }
+
+    public void doSomeOtherThing(int number){
+        System.out.println("doing a different business method. Number: "+number);
+    }
+}
+```
+Here is the configuration class to discover the beans. The annotation `@EnableAspectJAutoProxy` takes `@Aspect` annotated Spring beans in the context and use them to create proxies as defined in the aspect class by the different used advice annotations. It is the equivalent of `<aop:aspectj-autoproxy/>` in xml configuration.
+```java
+@Configuration
+@ComponentScan("com.example.aop.matthew")
+@EnableAspectJAutoProxy
+public class AppConfig {
+
+}
+```
+In the main():
+```java
+public class DemoApplication {
+    public static void main(String[] args) {
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        MyService service = context.getBean(MyService.class);
+        service.doSomething();
+        System.out.println();
+        service.doSomeOtherThing(3);
+    }
+}
+```
+This will print 
+```text
+Intercepted!
+Intercepted all!
+doing business method
+
+Intercepted all!
+doing a different business method. Number: 3
+Using Join Point [3]
+```
 
 
 
